@@ -13,6 +13,7 @@ const SFX_DIR := "res://assets/audio/sfx/"
 var score := 0
 var player: Area2D
 var hud: Label
+var fps: Label
 var sfx := {}
 
 
@@ -37,6 +38,11 @@ func _ready() -> void:
 func _update_hud() -> void:
 	if hud:
 		hud.text = "Score: %d / %d (sipky = pohyb)" % [score, COIN_COUNT]
+
+
+func _process(delta: float) -> void:
+	if fps:
+		fps.text = "FPS: %d" % Engine.get_frames_per_second()
 
 
 # ----------------------------------------------------------------- assety ----
@@ -117,6 +123,11 @@ func _add_ui() -> void:
 	hud.position = Vector2(10, 8)
 	add_child(hud)
 	_update_hud()
+
+	fps = Label.new()
+	fps.name = "Fps"
+	fps.position = get_viewport_rect().size - Vector2(100, 10)
+	add_child(fps)
 
 
 func _visual(asset_name: String, fallback: Color, size: Vector2) -> Node2D:
