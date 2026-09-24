@@ -1,0 +1,48 @@
+{
+  "_popis": [
+    "Fronta úkolů, které má orchestr dělat SÁM, když nemá nic od tebe.",
+    "Conductor vezme vždy první položku, která ještě není hotová, založí z ní úkol",
+    "a teprve pak se ptá znovu – takže se pracuje po jedné a nevzniká zmatek.",
+    "",
+    "Pravidla pro položky:",
+    "  • musí být MALÉ a samostatné (jeden soubor, jedna změna),",
+    "  • musí být ADITIVNÍ – nesmí měnit to, co hlídají testy (ty se pouští po každé změně),",
+    "  • id musí být unikátní a neměnné (podle něj conductor pozná, co už proběhlo).",
+    "",
+    "Když je hotovo, conductor se zastaví sám (a napíše to do notifikace).",
+    "Otevřené pull requesty se počítají: když jich visí víc než ROADMAP_MAX_PRS,",
+    "conductor počká, až je zkontroluješ – nemá smysl vršit další."
+  ],
+  "tasks": [
+    {
+      "id": "pause-space",
+      "title": "Pauza mezerníkem",
+      "kind": "code",
+      "prompt": "V souboru scripts/game.gd přidej pauzu: při stisku klávesy SPACE se přepne proměnná paused a podle ní se nastaví get_tree().paused. Když je pauza, zobraz Label s textem 'PAUZA' (vytvoř ho jen jednou, jen mu přepínej visible). Na začátku hry musí být pauza vypnutá. Nic jiného v projektu neměň."
+    },
+    {
+      "id": "fps-label",
+      "title": "Počítadlo FPS",
+      "kind": "code",
+      "prompt": "V souboru scripts/game.gd přidej Label s názvem Fps, který bude v pravém horním rohu obrazovky a v _process bude zobrazovat aktuální FPS ve formátu 'FPS: %d' pomocí Engine.get_frames_per_second(). Nic jiného neměň."
+    },
+    {
+      "id": "enemies",
+      "title": "Dva nepřátelé ve scéně",
+      "kind": "code",
+      "prompt": "V souboru scripts/game.gd přidej do scény dva nepřátele: Area2D s názvem Enemy1 a Enemy2, každý dostane Sprite2D s texturou res://assets/sprites/enemy.png (když soubor neexistuje, použij ColorRect). Umísti je na rozumné pozice mimo hráče a přidej jim do skupiny 'enemy'. Když se jich hráč dotkne, přehraj zvuk 'hurt'. Nic jiného neměň."
+    },
+    {
+      "id": "chest-pickup",
+      "title": "Truhla s odměnou",
+      "kind": "code",
+      "prompt": "V souboru scripts/game.gd přidej do scény truhlu na pevné pozici: Area2D s názvem Chest a Sprite2D s texturou res://assets/sprites/chest.png (když není, použij ColorRect). Když se s ní hráč střetne, přehraje se zvuk 'powerup' a truhla zmizí. Nic jiného neměň."
+    },
+    {
+      "id": "hit-flash",
+      "title": "Bliknutí hráče při zásahu",
+      "kind": "code",
+      "prompt": "V souboru scripts/player.gd přidej veřejnou metodu flash(), která na krátkou chvíli (například 0,15 sekundy) změní modulaci hráče na červenou a pak ji vrátí na bílou. Použij k tomu tween nebo await get_tree().create_timer(). Nic dalšího neměň a nepřidávej volání odjinud."
+    }
+  ]
+}
