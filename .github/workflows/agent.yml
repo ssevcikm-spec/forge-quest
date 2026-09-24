@@ -111,15 +111,27 @@ jobs:
         id: verdict
         if: always()
         run: |
-          if [ "${{ steps.tests.outcome }}" = "success" ]; then
-            echo "status=success" >> "$GITHUB_OUTPUT"
-          else
-            echo "status=failed" >> "$GITHUB_OUTPUT"
-          fi
           git add -A
           git diff --cached --binary > agent.patch || true
           echo "--- zmeny ---"
           git diff --cached --stat | tail -20
+          if [ "${{ steps.tests.outcome }}" != "success" ]; then
+            echo "status=failed" >> "$GITHUB_OUTPUT"
+          elif [ -s agent.patch ]; then
+            echo "status=success" >> "$GITHUB_OUTPUT"
+          else
+            # Agent nezměnil ani řádek (u slabších modelů se to stane). Není to
+            # „hotovo" – je to neúspěch pokusu. Bez tohohle rozlišení padal
+            # další krok na „No valid patches in input", což vypadalo jako
+            # rozbitá pipeline, i když šlo jen o to, že model nic neudělal.
+            echo "status=nochange" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Agent nic nezměnil → hlásíme neúspěch
+        if: steps.verdict.outputs.status == 'nochange'
+        run: |
+          echo "::error::Agent nezměnil žádný kód. Zkusí se to znovu (u jiného pokusu to vyjde)."
+          exit 1
 
       - name: Report při selhání
         if: steps.tests.outcome != 'success'
