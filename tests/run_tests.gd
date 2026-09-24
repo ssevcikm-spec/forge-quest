@@ -244,6 +244,30 @@ func _run() -> void:
 			_check(abs(music.stream.loop_end - expected_loop_end) <= 2,
 				"konec smyčky sedí s délkou skladby (%d vs %d)" % [music.stream.loop_end, expected_loop_end])
 
+	# ------------------------------------------------------------ entity ----
+	# Nepřátelé (když je projekt má) se musí hýbat a nesmí vlézt do zdi.
+	# Test vznikl proto, že tahle vlastnost přišla od agenta bez testu – na
+	# rozbití by se přišlo až ve hře.
+	var enemies := get_nodes_in_group("enemy")
+	if enemies.size() > 0:
+		var before: Array = []
+		for e in enemies:
+			before.append(e.position)
+		for i in 30:
+			await process_frame
+		var moved := 0.0
+		for i in enemies.size():
+			moved += before[i].distance_to(enemies[i].position)
+		_check(moved > 0.5, "nepřátelé se hýbou (celkem %.1f px za 30 snímků)" % moved)
+
+		var lvl_node = main.get_node_or_null("Level")
+		if lvl_node != null:
+			var mimo := 0
+			for e in enemies:
+				if not lvl_node.is_walkable_at(e.position):
+					mimo += 1
+			_check(mimo == 0, "nepřátelé zůstávají na průchozích políčkách (%d mimo)" % mimo)
+
 	_finish()
 
 
