@@ -230,6 +230,11 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+    env:
+      # Bez tohohle `gh` neví, se kterým repozitářem pracuje: tenhle job
+      # záměrně nedělá checkout, takže si repo nemá z čeho odvodit a spadne na
+      # "fatal: not a git repository". Stačí mu ho říct rovnou.
+      GH_REPO: ${{ github.repository }}
     steps:
       - name: Pravidla – smí se to sloučit samo?
         id: gate
