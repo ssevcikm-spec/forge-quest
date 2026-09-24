@@ -9,9 +9,13 @@ extends Node2D
 const COIN_COUNT := 5
 const SPRITE_DIR := "res://assets/sprites/"
 const SFX_DIR := "res://assets/audio/sfx/"
+const LEVEL_DIR := "res://assets/levels/"
+const LEVEL_NAME := "main"
 
 var score := 0
+var coin_total := COIN_COUNT
 var player: Area2D
+var level: Node2D
 var hud: Label
 var sfx := {}
 var paused := false
@@ -23,17 +27,20 @@ func _ready() -> void:
 	_load_sfx()
 	_add_background()
 	_add_music()
+	_add_level()
 	player = _make_player()
 	add_child(player)
 
 	var vp := get_viewport_rect().size
-	for i in COIN_COUNT:
-		var c := _make_coin(i, vp)
-		add_child(c)
+	var spots := _coin_spots(vp)
+	coin_total = spots.size()
+	for i in coin_total:
+		add_child(_make_coin(i, spots[i]))
 
 	_add_ui()
-	print("[game] připraveno: hráč + %d mincí, zvuků načteno: %d, dlaždice: %s" % [
-		COIN_COUNT, sfx.size(), "ano" if _texture("tiles/grass") else "ne"])
+	print("[game] připraveno: hráč + %d mincí, zvuků načteno: %d, dlaždice: %s, úroveň: %s" % [
+		coin_total, sfx.size(), "ano" if _texture("tiles/grass") else "ne",
+		"%s %d×%d" % [level.level_name, level.width, level.height] if level else "ne"])
 
 	# Přidání nepřátel
 	var enemy1 := _make_enemy("Enemy1", vp)
@@ -48,7 +55,7 @@ func _ready() -> void:
 
 func _update_hud() -> void:
 	if hud:
-		hud.text = "Score: %d / %d (sipky = pohyb)" % [score, COIN_COUNT]
+		hud.text = "Skóre: %d / %d (šipky = pohyb, mezerník = pauza)" % [score, coin_total]
 
 
 # ----------------------------------------------------------------- assety ----
@@ -69,6 +76,8 @@ func _add_background() -> void:
 	var bg := TextureRect.new()
 	bg.name = "Background"
 	bg.texture = tex
+	# Pozadi je cela obrazovka, takze musi byt vespod (viz test vrstev).
+	bg.z_index = -3
 	# Dlaždice se opakuje přes celou obrazovku – proto se vyplatilo, že beze švu.
 	bg.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	bg.stretch_mode = TextureRect.STRETCH_TILE
@@ -106,6 +115,44 @@ func _add_music() -> void:
 		player.play()
 		print("[game] hudba: %s" % track)
 		return
+
+
+func _add_level() -> void:
+	"""Postaví mapu z assets/levels/<nazev>.json (generuje `forge level`).
+	Když úroveň v projektu není, hra se hraje na holé ploše – pořád hratelná."""
+	var path := LEVEL_DIR + LEVEL_NAME + ".json"
+	if not FileAccess.file_exists(path):
+		print("[game] úroveň %s není – hraju bez mapy" % path)
+		return
+	var script = load("res://scripts/level.gd")
+	if script == null:
+		return
+	var node := Node2D.new()
+	node.name = "Level"
+	node.set_script(script)
+	node.add_to_group("level")
+	if not node.load_file(path):
+		node.queue_free()
+		return
+	# Dlaždice kreslíme pod vším ostatním: zdi mají z_index 1 (aby zakryly spáry
+	# mezi podlahou), takže bez posunu by přelezly hráče. Odsazení celé mapy
+	# o -2 posune i její potomky (z_as_relative je výchozí), hráč zůstane nahoře.
+	node.z_index = -1
+	level = node
+	add_child(level)
+	level.build()
+
+
+func _coin_spots(vp: Vector2) -> Array:
+	"""Mince stojí tam, kde je vyznačila mapa (středy místností – ověřeně
+	průchozí). Bez mapy se rozhodí náhodně jako dřív."""
+	var spots: Array = []
+	if level:
+		spots = level.marker_positions("coin")
+	if spots.is_empty():
+		for i in COIN_COUNT:
+			spots.append(Vector2(randf_range(24.0, vp.x - 24.0), randf_range(24.0, vp.y - 24.0)))
+	return spots
 
 
 func _add_ui() -> void:
@@ -186,7 +233,12 @@ func _make_player() -> Area2D:
 	var p := Area2D.new()
 	p.name = "Player"
 	p.set_script(load("res://scripts/player.gd"))
-	p.position = get_viewport_rect().size / 2.0
+	# Start z mapy (spawn), jinak střed obrazovky.
+	if level:
+		p.position = level.cell_center(level.spawn_cell.x, level.spawn_cell.y)
+	else:
+		p.position = get_viewport_rect().size / 2.0
+	p.z_index = 5
 	# Když existuje animace (vygenerovaná přes `forge anim`), hráč se hýbe.
 	# Jinak se použije statický sprite, případně barevný obdélník.
 	var anim := _animation_visual("walk")
@@ -213,7 +265,7 @@ func _animation_visual(anim_name: String) -> Node2D:
 	return s
 
 
-func _make_coin(index: int, vp: Vector2) -> Area2D:
+func _make_coin(index: int, pos: Vector2) -> Area2D:
 	var c := Area2D.new()
 	c.name = "Coin%d" % (index + 1)
 	c.add_to_group("coin")
@@ -223,7 +275,8 @@ func _make_coin(index: int, vp: Vector2) -> Area2D:
 	shape.shape = circle
 	c.add_child(shape)
 	c.add_child(_visual("coin", Color(1.0, 0.85, 0.2), Vector2(8, 8)))
-	c.position = Vector2(randf_range(24.0, vp.x - 24.0), randf_range(24.0, vp.y - 24.0))
+	c.position = pos
+	c.z_index = 3
 	c.area_entered.connect(_on_coin_touched.bind(c))
 	return c
 
@@ -236,7 +289,7 @@ func _on_coin_touched(other: Area2D, coin: Area2D) -> void:
 	coin.remove_from_group("coin")
 	coin.queue_free()
 	_update_hud()
-	if score >= COIN_COUNT:
+	if score >= coin_total:
 		play_sfx("win")
 
 
@@ -252,6 +305,18 @@ func _process(delta: float) -> void:
 		fps_label.text = "FPS: %d" % Engine.get_frames_per_second()
 
 
+func _safe_spot(vp: Vector2) -> Vector2:
+	"""Náhodné místo, které je průchozí. Bez mapy je to cokoliv v obraze –
+	s mapou by náhodná pozice mohla skončit ve zdi (to se stávalo)."""
+	if level == null:
+		return Vector2(randf_range(24.0, vp.x - 24.0), randf_range(24.0, vp.y - 24.0))
+	for i in 40:
+		var p := Vector2(randf_range(8.0, vp.x - 8.0), randf_range(8.0, vp.y - 8.0))
+		if level.is_walkable_at(p):
+			return p
+	return level.cell_center(level.spawn_cell.x, level.spawn_cell.y)
+
+
 func _make_enemy(name: String, vp: Vector2) -> Area2D:
 	var e := Area2D.new()
 	e.name = name
@@ -262,7 +327,7 @@ func _make_enemy(name: String, vp: Vector2) -> Area2D:
 	shape.shape = circle
 	e.add_child(shape)
 	e.add_child(_visual("enemy", Color(1.0, 0.0, 0.0), Vector2(8, 8)))
-	e.position = Vector2(randf_range(24.0, vp.x - 24.0), randf_range(24.0, vp.y - 24.0))
+	e.position = _safe_spot(vp)
 	e.area_entered.connect(_on_enemy_touched.bind(e))
 	return e
 
@@ -283,7 +348,9 @@ func _make_chest(vp: Vector2) -> Area2D:
 	shape.shape = circle
 	c.add_child(shape)
 	c.add_child(_visual("chest", Color(0.8, 0.5, 0.2), Vector2(8, 8)))
-	c.position = Vector2(vp.x / 2.0, vp.y / 2.0)
+	# Truhla patří k východu z úrovně – když mapa existuje, stojí přesně tam.
+	var exits: Array = level.marker_positions("exit") if level else []
+	c.position = exits[0] if not exits.is_empty() else _safe_spot(vp)
 	c.area_entered.connect(_on_chest_touched.bind(c))
 	return c
 

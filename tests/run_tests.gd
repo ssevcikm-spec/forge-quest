@@ -44,9 +44,13 @@ func _run() -> void:
 	var consts = main.get_script().get_script_constant_map()
 	if consts.has("COIN_COUNT"):
 		expected = consts["COIN_COUNT"]
+	# S úrovní určuje počet mincí mapa, ne konstanta.
+	var ct = main.get("coin_total")
+	if ct != null:
+		expected = int(ct)
 	var coins := get_nodes_in_group("coin")
 	_check(coins.size() == expected,
-		"počet mincí odpovídá COIN_COUNT (%d, nalezeno %d)" % [expected, coins.size()])
+		"počet mincí odpovídá očekávání (%d, nalezeno %d)" % [expected, coins.size()])
 
 	var hud = main.get_node_or_null("Hud")
 	_check(hud != null, "HUD s výsledkem existuje")
@@ -64,7 +68,8 @@ func _run() -> void:
 	var missing := 0
 	var loaded := 0
 	for dir_path in ["res://assets/sprites", "res://assets/audio/sfx",
-					 "res://assets/audio/music", "res://assets/tiles", "res://assets/ui"]:
+					 "res://assets/audio/music", "res://assets/tiles", "res://assets/ui",
+					 "res://assets/levels"]:
 		var d := DirAccess.open(dir_path)
 		if d == null:
 			continue
@@ -104,6 +109,77 @@ func _run() -> void:
 					_check(n == expected_frames,
 						"počet framů animace '%s' sedí (%d)" % [nm, n])
 
+	# ------------------------------------------------------------- úroveň ----
+	# Mapa se testuje vlastnostmi, ne vzhledem: musí se z ní dát projít všude,
+	# mince musí ležet na průchozích políčkách a zeď musí hráče zastavit.
+	if FileAccess.file_exists("res://assets/levels/main.json"):
+		_check(true, "úroveň main.json je v projektu")
+		var lvl = main.get_node_or_null("Level")
+		_check(lvl != null, "mapa je postavená ve scéně")
+		if lvl != null:
+			_check(lvl.is_walkable_cell(lvl.spawn_cell.x, lvl.spawn_cell.y),
+				"spawn je na průchozím políčku %s" % str(lvl.spawn_cell))
+			_check(lvl.reachable_count() == lvl.walkable_count(),
+				"z každého políčka se dá dojít na spawn (%d z %d)"
+				% [lvl.reachable_count(), lvl.walkable_count()])
+			_check(lvl.get_child_count() == lvl.width * lvl.height,
+				"mapa má dlaždici pro každé políčko (%d)" % lvl.get_child_count())
+
+			# Vrstvy: mapa musí být nad pozadím (jinak ji celoobrazovková tráva
+			# schová) a hráč nad mapou. Testy dřív prošly, i když mapa nebyla
+			# vidět – dlaždice ve scéně byly, jen se kreslily pod pozadím.
+			var bg_node = main.get_node_or_null("Background")
+			var bg_z: int = bg_node.z_index if bg_node != null else -99
+			if bg_node != null:
+				_check(lvl.z_index > bg_z,
+					"mapa se kreslí nad pozadím (mapa %d, pozadí %d)" % [lvl.z_index, bg_z])
+			if player != null:
+				_check(player.z_index > lvl.z_index + 1,
+					"hráč se kreslí nad mapou (hráč %d, zeď %d)"
+					% [player.z_index, lvl.z_index + 1])
+
+			var bad_markers := 0
+			for kind in ["coin", "exit", "spawn"]:
+				for pos in lvl.marker_positions(kind):
+					if not lvl.is_walkable_at(pos):
+						bad_markers += 1
+			_check(bad_markers == 0, "všechny značky leží na průchozích políčkách")
+
+			if player != null:
+				_check(lvl.is_walkable_at(player.position),
+					"hráč startuje na průchozím políčku %s" % str(player.position))
+
+				# Najdi zeď vedle průchozího políčka a zkus do ní vstoupit.
+				var from_cell := Vector2i(-1, -1)
+				var wall_cell := Vector2i(-1, -1)
+				for y in lvl.height:
+					for x in lvl.width:
+						if not lvl.is_walkable_cell(x, y):
+							continue
+						for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+							var n: Vector2i = Vector2i(x, y) + d
+							if n.x > 0 and n.y > 0 and n.x < lvl.width - 1 and n.y < lvl.height - 1 \
+									and not lvl.is_walkable_cell(n.x, n.y):
+								from_cell = Vector2i(x, y)
+								wall_cell = n
+								break
+						if wall_cell.x >= 0:
+							break
+					if wall_cell.x >= 0:
+						break
+				_check(wall_cell.x >= 0, "našla se zeď sousedící s chodbou")
+				if wall_cell.x >= 0:
+					var back: Vector2 = player.position
+					player.position = lvl.cell_center(from_cell.x, from_cell.y)
+					var moved: Vector2 = player._step(lvl.cell_center(wall_cell.x, wall_cell.y))
+					_check(lvl.cell_at(moved) != wall_cell,
+						"hráč se nedostane do zdi %s (skončil v %s)"
+						% [str(wall_cell), str(lvl.cell_at(moved))])
+					_check(lvl.is_walkable_at(moved),
+						"i po nárazu do zdi zůstane hráč na průchozím políčku")
+					player.position = back
+
+	# ---------------------------------------------------------- dlaždice ----
 	# Dlaždice a UI musí být nejen na disku, ale i VE SCÉNĚ.
 	# Tohle je regresní test na konkrétní vadu: pozadí se sice načetlo, ale mělo
 	# nulovou velikost, takže se vůbec nevykreslilo (odhalil to až vision model
