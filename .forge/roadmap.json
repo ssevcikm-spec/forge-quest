@@ -43,6 +43,24 @@
       "title": "Bliknutí hráče při zásahu",
       "kind": "code",
       "prompt": "V souboru scripts/player.gd přidej veřejnou metodu flash(), která na krátkou chvíli (například 0,15 sekundy) změní modulaci hráče na červenou a pak ji vrátí na bílou. Použij k tomu tween nebo await get_tree().create_timer(). Nic dalšího neměň a nepřidávej volání odjinud."
+    },
+    {
+      "id": "enemy-patrol",
+      "title": "Nepřátelé se hýbou a neprojdou zdí",
+      "kind": "code",
+      "prompt": "V souboru scripts/game.gd přidej nepřátelům pohyb po úrovni. Uzly nepřátel jsou ve skupině 'enemy' (vytváří je funkce _make_enemy) a mají potomka Sprite2D nebo ColorRect. Udělej to takto: (1) v _make_enemy nastav nepříteli vlastnost 'smer' (Vector2) na náhodný jednotkový vektor a zpomal ho na 40 pixelů za sekundu; (2) přidej funkci _move_enemies(delta), kterou zavoláš z _process, a v ní pro každý uzel ve skupině 'enemy' spočítej cil = nepritel.position + nepritel.smer * 40 * delta; (3) uzel mapy najdi jednou funkcí get_tree().get_first_node_in_group('level') a pokud není null a má metodu is_walkable_at, tak když is_walkable_at(cíl) vrátí false, otoč směr (smer = -smer) a zůstaň na místě, jinak nepřítele na cíl posuň; (4) když nepřítel narazí na okraj obrazovky (get_viewport_rect().size), také otoč směr. Nic dalšího v projektu neměň a nic nemaž."
+    },
+    {
+      "id": "exit-win",
+      "title": "Východ z úrovně ukončí hru",
+      "kind": "code",
+      "prompt": "V souboru scripts/game.gd přidej výhru: v _ready vytvoř Label s názvem WinLabel, textem 'VYHRÁL JSI!' a nastav mu visible = false (umísti ho doprostřed obrazovky, stejně jako je udělaný PauseLabel). Ve funkci _on_chest_touched po sehrání truhly nastav WinLabel.visible = true a nastav get_tree().paused = true. Nic dalšího neměň a nic nemaž."
+    },
+    {
+      "id": "minimap",
+      "title": "Miniatura mapy v rohu obrazovky",
+      "kind": "code",
+      "prompt": "V souboru scripts/game.gd přidej do scény miniaturu mapy: v _ready vytvoř TextureRect s názvem Minimap, který má texturu res://assets/levels/main.preview.png (načti ji funkcí load, ale jen když ResourceLoader.exists vrací true), je umístěný do pravého dolního rohu obrazovky, má velikost 120x64 pixelů, stretch_mode = TextureRect.STRETCH_SCALE a z_index = 8. Když textura neexistuje, miniaturu vůbec nevytvářej. Nic dalšího neměň a nic nemaž."
     }
   ]
 }
