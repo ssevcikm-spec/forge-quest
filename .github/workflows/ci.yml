@@ -31,12 +31,17 @@ jobs:
         run: bash .forge/install-godot.sh
 
       - name: Import assetů
+        timeout-minutes: 5
         run: '"$FORGE_GODOT" --headless --path . --import'
 
       - name: Testy hry
-        run: '"$FORGE_GODOT" --headless --path . --script res://tests/run_tests.gd'
+        # Timeout i tady: kdyby se do hry dostala nekonečná smyčka (stalo se to
+        # u patche od agenta), testy by visely až do limitu celého jobu.
+        timeout-minutes: 3
+        run: timeout 120 "$FORGE_GODOT" --headless --path . --script res://tests/run_tests.gd
 
       - name: Export buildů (Linux + Web)
+        timeout-minutes: 10
         run: |
           mkdir -p build/linux build/web
           "$FORGE_GODOT" --headless --path . --export-release "Linux" build/linux/game.x86_64

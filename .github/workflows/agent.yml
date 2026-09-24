@@ -89,6 +89,9 @@ jobs:
       - name: Spusť agenta
         # Zadání jde do skriptu přes proměnnou, ne přes ${{ }} – jinak by se
         # text z issue mohl vložit do shellu jako kód (script injection).
+        # Timeout je tu proto, že volání free LLM umí viset (poskytovatel drží
+        # spojení a neodpovídá). Bez něj by se spálil celý 45minutový job.
+        timeout-minutes: 20
         env:
           FORGE_PROMPT: ${{ inputs.prompt }}
           FORGE_TITLE: ${{ inputs.title }}
@@ -101,11 +104,16 @@ jobs:
             2>&1 | tee agent.log || echo "aider skoncil s chybou"
 
       - name: Testy hry (Godot headless)
+        # POZOR: tenhle timeout tam musí být. Bez něj se stalo, že patch od
+        # agenta obsahoval nekonečnou smyčku, Godot se zasekl a krok visel
+        # 15+ minut (naměřeno) – místo rychlého „testy selhaly" se čekalo na
+        # timeout celého jobu. 3 minuty jsou 20× víc, než testy reálně trvají.
+        timeout-minutes: 3
         id: tests
         run: |
           set -o pipefail
           "$FORGE_GODOT" --headless --path . --import 2>&1 | tail -3
-          "$FORGE_GODOT" --headless --path . --script res://tests/run_tests.gd 2>&1 | tee -a agent.log
+          timeout 120 "$FORGE_GODOT" --headless --path . --script res://tests/run_tests.gd 2>&1 | tee -a agent.log
 
       - name: Verdikt a vytvoření patche
         id: verdict
