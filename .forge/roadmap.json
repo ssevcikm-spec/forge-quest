@@ -61,6 +61,36 @@
       "title": "Miniatura mapy v rohu obrazovky",
       "kind": "code",
       "prompt": "V souboru scripts/game.gd přidej do scény miniaturu mapy: v _ready vytvoř TextureRect s názvem Minimap, který má texturu res://assets/levels/main.preview.png (načti ji funkcí load, ale jen když ResourceLoader.exists vrací true), je umístěný do pravého dolního rohu obrazovky, má velikost 120x64 pixelů, stretch_mode = TextureRect.STRETCH_SCALE a z_index = 8. Když textura neexistuje, miniaturu vůbec nevytvářej. Nic dalšího neměň a nic nemaž."
+    },
+    {
+      "id": "coin-spin",
+      "title": "Mince se točí",
+      "kind": "code",
+      "prompt": "V souboru scripts/game.gd přidej mincím otáčení. Udělej to takto: (1) přidej funkci _spin_coins(cas: float) -> void, která projde get_tree().get_nodes_in_group('coin') a každé minci nastaví scale.x podle sinusu: pro každou minci spočítej var faze: float = cas * 3.0 + float(mince.get_index()) a nastav mince.scale = Vector2(abs(cos(faze)), 1.0); (2) v _process přičti čas: na začátek souboru přidej var cas_hry: float = 0.0 a v _process udělej cas_hry += delta a pak zavolej _spin_coins(cas_hry). Pozor: proměnné, které vznikají z uzlů bez typu, deklaruj s výslovným typem (například 'var faze: float = ...'), nikdy nepoužívej ':=' u hodnot z uzlů z get_nodes_in_group. Vlastnosti uzlům vytvořeným přes Area2D.new() nepřidávej. Nic dalšího neměň a nic nemaž."
+    },
+    {
+      "id": "music-mute",
+      "title": "Klávesa M vypne hudbu",
+      "kind": "code",
+      "prompt": "V souboru scripts/game.gd přidej vypínání hudby: ve funkci _input (už tam řeší mezerník pro pauzu) přidej další větev, která při stisku klávesy KEY_M (event.keycode == KEY_M a event.pressed) najde uzel hudby přes get_node_or_null('Music') a přepne mu stream_paused na opačnou hodnotu (když je uzel null, nic se neděje). Nic dalšího neměň a nic nemaž."
+    },
+    {
+      "id": "best-score",
+      "title": "Nejlepší skóre se pamatuje",
+      "kind": "code",
+      "prompt": "V souboru scripts/game.gd přidej ukládání nejlepšího skóre. Udělej to takto: (1) přidej proměnnou var best: int = 0; (2) přidej funkci _load_best() -> void, která přes ConfigFile načte z 'user://best.cfg' sekci 'hra' klíč 'skore' – použij var cfg := ConfigFile.new(), var chyba: int = cfg.load('user://best.cfg') a když chyba == OK, nastav best = int(cfg.get_value('hra', 'skore', 0)); (3) přidej funkci _save_best() -> void, která stejnou cestu uloží (cfg.set_value('hra', 'skore', best) a cfg.save('user://best.cfg')); (4) v _ready zavolej _load_best() a v _update_hud() přidej do textu HUDu i nejlepší skóre, například hud.text = 'Skóre: %d / %d (nejlepší: %d)' % [score, coin_total, best]; (5) ve funkci _on_coin_touched, když score > best, nastav best = score a zavolej _save_best(). Nic dalšího neměň a nic nemaž."
+    },
+    {
+      "id": "lives-hud",
+      "title": "Životy hráče v HUD",
+      "kind": "code",
+      "prompt": "V souboru scripts/game.gd přidej životy. Udělej to takto: (1) přidej proměnnou var lives: int = 3; (2) v _update_hud() přidej do textu HUDu i životy, například hud.text = 'Skóre: %d / %d (nejlepší: %d)   Životy: %d' % [score, coin_total, best, lives] (když proměnná best v souboru ještě není, vynech ji z textu); (3) ve funkci _on_enemy_touched po přehrání zvuku 'hurt' uber život (lives -= 1), zavolej _update_hud(), nastav nepříteli visible = false a odeber ho ze skupiny 'enemy' (enemy.remove_from_group('enemy')) a pak enemy.queue_free(); (4) když po ubraní klesnou životy na nulu nebo méně, nastav get_tree().paused = true. Nic dalšího neměň a nic nemaž."
+    },
+    {
+      "id": "minimap-dot",
+      "title": "Tečka hráče na miniatuře mapy",
+      "kind": "code",
+      "prompt": "V souboru scripts/game.gd přidej na miniaturu mapy tečku hráče. Udělej to takto: (1) v _ready, hned po vytvoření uzlu Minimap (když v _ready žádný Minimap není, nic nedělej a skonči), vytvoř ColorRect s názvem MinimapDot, barvou Color(0.35, 0.85, 1.0), velikostí Vector2(3, 3) a z_index = 9, a přidej ho jako potomka uzlu Minimap; (2) přidej funkci _update_minimap_dot() -> void, která najde uzel Minimap přes get_node_or_null('Minimap') a když je null, skončí; najde v něm potomka MinimapDot přes get_node_or_null('MinimapDot') a když je null, skončí; spočítá var vp: Vector2 = get_viewport_rect().size a nastaví tečce position na Vector2(player.position.x / vp.x * 120.0, player.position.y / vp.y * 64.0); (3) v _process zavolej _update_minimap_dot(). Nic dalšího neměň a nic nemaž."
     }
   ]
 }
