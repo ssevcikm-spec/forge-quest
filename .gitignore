@@ -14,3 +14,9 @@ assets/_raw/
 agent.patch
 agent.log
 .aider*
+
+# Pojistka: soubor, ktery vznikne, kdyz shell rozbije cestu k secretu
+/C:*Users*
+UsersSsevc*
+.secrets/
+git-credentials

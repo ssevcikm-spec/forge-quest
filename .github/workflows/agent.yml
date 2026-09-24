@@ -1,5 +1,10 @@
 name: Forge agent
 
+# Jméno běhu nese run_key. Conductor podle něj běh najde přes GitHub API a sám
+# si převezme výsledek (polling). Díky tomu v repu nemusí být žádné další
+# tajemství a conductor uvidí i běh, který spadne dřív, než by cokoli poslal.
+run-name: "Forge #${{ inputs.task_id }} [${{ inputs.run_key }}]"
+
 # Spouští ho conductor (Cloudflare Worker) přes workflow_dispatch.
 #
 # Agenti pracují VÝHRADNĚ na tomto repu a na této hře – to je podmínka použití
@@ -117,6 +122,7 @@ jobs:
           FORGE_SECRET: ${{ secrets.FORGE_WEBHOOK_SECRET }}
           FORGE_RUN_KEY: ${{ inputs.run_key }}
         run: node .forge/report.mjs failed "Testy po zasahu agenta selhaly"
+        continue-on-error: true
 
       - name: Ulož patch a log
         if: always()
@@ -174,6 +180,9 @@ jobs:
             návrh, ne jako hotovou věc.
 
       - name: Report do conductora
+        # Když report selže, běh se nesmí tvářit jako neúspěšný – PR už je
+        # otevřený a conductor si ho najde sám přes GitHub API (polling).
+        continue-on-error: true
         env:
           FORGE_URL: ${{ secrets.FORGE_CONDUCTOR_URL }}
           FORGE_SECRET: ${{ secrets.FORGE_WEBHOOK_SECRET }}
