@@ -1,0 +1,37 @@
+{
+  "generated": "2026-09-24 15:57:28",
+  "ui_size": 48,
+  "parts": [
+    {
+      "name": "panel",
+      "file": "panel.png",
+      "size": 48,
+      "bytes": 218
+    },
+    {
+      "name": "button",
+      "file": "button.png",
+      "size": 48,
+      "bytes": 192
+    },
+    {
+      "name": "button_hover",
+      "file": "button_hover.png",
+      "size": 48,
+      "bytes": 195
+    },
+    {
+      "name": "bar_bg",
+      "file": "bar_bg.png",
+      "size": 48,
+      "bytes": 191
+    },
+    {
+      "name": "bar_fill",
+      "file": "bar_fill.png",
+      "size": 48,
+      "bytes": 170
+    }
+  ],
+  "note": "panel je připravený pro devět řezů (nine-patch), okraj 3 px"
+}

@@ -1,0 +1,50 @@
+{
+  "generated": "2026-09-24 15:57:45",
+  "seed": 20260924,
+  "tile_size": 32,
+  "tiles": [
+    {
+      "name": "grass",
+      "file": "grass.png",
+      "size": 32,
+      "seam": 0.27,
+      "bytes": 490
+    },
+    {
+      "name": "dirt",
+      "file": "dirt.png",
+      "size": 32,
+      "seam": 0.17,
+      "bytes": 448
+    },
+    {
+      "name": "sand",
+      "file": "sand.png",
+      "size": 32,
+      "seam": 0.3,
+      "bytes": 416
+    },
+    {
+      "name": "stone",
+      "file": "stone.png",
+      "size": 32,
+      "seam": 0.17,
+      "bytes": 402
+    },
+    {
+      "name": "water",
+      "file": "water.png",
+      "size": 32,
+      "seam": 0.18,
+      "bytes": 371
+    },
+    {
+      "name": "brick",
+      "file": "brick.png",
+      "size": 32,
+      "seam": 0.73,
+      "bytes": 205
+    }
+  ],
+  "note": "procedurální dlaždice – šev ≤ 1.6 znamená, že na sebe navazují"
+}

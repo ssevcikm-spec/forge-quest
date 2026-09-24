@@ -1,0 +1,35 @@
+{
+  "_popis": [
+    "Řetězec bezplatných poskytovatelů LLM pro běh v GitHub Actions.",
+    "Zkouší se popořadě; první, který odpoví, vyhrává. Klíče se berou z prostředí",
+    "(v Actions z GitHub Secrets). Ceny a limity se mění – ověřeno 09/2026:",
+    "  gemini     – free tier, bez karty, ~1000 požadavků/den (limity Google nezveřejňuje)",
+    "  groq       – free trvale bez karty, 30 RPM / 1000 RPD, gpt-oss-120b",
+    "  openrouter – modely s příponou :free, 50 požadavků/den (1000 po dobití kreditu)",
+    "Poznámka: Cerebras zrušil trvalý free tier a GitHub Models byly 30. 7. 2026 zrušeny."
+  ],
+  "providers": [
+    {
+      "name": "gemini",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "keyEnv": "GEMINI_API_KEY",
+      "models": ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash"]
+    },
+    {
+      "name": "groq",
+      "baseUrl": "https://api.groq.com/openai/v1",
+      "keyEnv": "GROQ_API_KEY",
+      "models": ["openai/gpt-oss-120b", "llama-3.3-70b-versatile", "openai/gpt-oss-20b"]
+    },
+    {
+      "name": "openrouter",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "keyEnv": "OPENROUTER_API_KEY",
+      "models": [
+        "qwen/qwen3-coder:free",
+        "deepseek/deepseek-chat-v3.1:free",
+        "z-ai/glm-4.5-air:free"
+      ]
+    }
+  ]
+}

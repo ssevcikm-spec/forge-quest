@@ -1,0 +1,51 @@
+name: CI (testy a build)
+
+# Běží na každý push do main a na každý pull request – tedy i na PR od agenta.
+# Ověřuje to, co je na hře nejdůležitější: že se projekt naimportuje, že projdou
+# testy a že se dá vyexportovat build.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    name: Testy a build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godotu
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/forge
+          key: forge-godot-4.7.2
+
+      - name: Godot + exportní šablony
+        run: bash .forge/install-godot.sh
+
+      - name: Import assetů
+        run: '"$FORGE_GODOT" --headless --path . --import'
+
+      - name: Testy hry
+        run: '"$FORGE_GODOT" --headless --path . --script res://tests/run_tests.gd'
+
+      - name: Export buildů (Linux + Web)
+        run: |
+          mkdir -p build/linux build/web
+          "$FORGE_GODOT" --headless --path . --export-release "Linux" build/linux/game.x86_64
+          "$FORGE_GODOT" --headless --path . --export-release "Web" build/web/index.html
+          ls -la build/linux build/web
+
+      - name: Ulož build
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ github.sha }}
+          path: build/
+          retention-days: 14

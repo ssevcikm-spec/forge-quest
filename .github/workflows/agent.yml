@@ -1,0 +1,181 @@
+name: Forge agent
+
+# Spouští ho conductor (Cloudflare Worker) přes workflow_dispatch.
+#
+# Agenti pracují VÝHRADNĚ na tomto repu a na této hře – to je podmínka použití
+# GitHub Actions: nesmí sloužit jako obecný serverless backend.
+#
+# Bezpečnostní vzor (2 joby):
+#   job 1 – běží LLM a má klíče, ale jen právo ČÍST. Uloží patch jako artefakt.
+#   job 2 – nemá žádné klíče, ale má právo ZAPSAT a otevře PR.
+# Díky tomu se klíč z jobu 1 nemůže dostat do commitu.
+
+on:
+  workflow_dispatch:
+    inputs:
+      task_id:
+        description: ID úkolu v conductoru
+        required: true
+      run_key:
+        description: UUID běhu (podle něj conductor páruje report)
+        required: true
+      kind:
+        description: 'code | assets | build | research'
+        required: false
+        default: code
+      title:
+        description: Název úkolu
+        required: false
+        default: bez nazvu
+      prompt:
+        description: Zadání pro agenta
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: forge-agent
+  cancel-in-progress: false
+
+jobs:
+  agent:
+    name: Agent (free LLM)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      status: ${{ steps.verdict.outputs.status }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache Godotu
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/forge
+          key: forge-godot-4.7.2
+
+      - name: Godot + exportní šablony
+        run: bash .forge/install-godot.sh
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Nainstaluj aider
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install aider-chat
+
+      - name: Vyber bezplatného poskytovatele LLM
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: node .forge/pick-provider.mjs
+
+      - name: Spusť agenta
+        # Zadání jde do skriptu přes proměnnou, ne přes ${{ }} – jinak by se
+        # text z issue mohl vložit do shellu jako kód (script injection).
+        env:
+          FORGE_PROMPT: ${{ inputs.prompt }}
+          FORGE_TITLE: ${{ inputs.title }}
+        run: |
+          set -o pipefail
+          aider \
+            --model "openai/${FORGE_MODEL}" \
+            --message "$FORGE_PROMPT" \
+            --yes --no-auto-commits --no-stream --no-check-update \
+            2>&1 | tee agent.log || echo "aider skoncil s chybou"
+
+      - name: Testy hry (Godot headless)
+        id: tests
+        run: |
+          set -o pipefail
+          "$FORGE_GODOT" --headless --path . --import 2>&1 | tail -3
+          "$FORGE_GODOT" --headless --path . --script res://tests/run_tests.gd 2>&1 | tee -a agent.log
+
+      - name: Verdikt a vytvoření patche
+        id: verdict
+        if: always()
+        run: |
+          if [ "${{ steps.tests.outcome }}" = "success" ]; then
+            echo "status=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=failed" >> "$GITHUB_OUTPUT"
+          fi
+          git add -A
+          git diff --cached --binary > agent.patch || true
+          echo "--- zmeny ---"
+          git diff --cached --stat | tail -20
+
+      - name: Report při selhání
+        if: steps.tests.outcome != 'success'
+        env:
+          FORGE_URL: ${{ secrets.FORGE_CONDUCTOR_URL }}
+          FORGE_SECRET: ${{ secrets.FORGE_WEBHOOK_SECRET }}
+          FORGE_RUN_KEY: ${{ inputs.run_key }}
+        run: node .forge/report.mjs failed "Testy po zasahu agenta selhaly"
+
+      - name: Ulož patch a log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-patch-${{ inputs.run_key }}
+          path: |
+            agent.patch
+            agent.log
+          retention-days: 7
+
+  pull-request:
+    name: Otevři pull request
+    needs: agent
+    if: needs.agent.outputs.status == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stáhni patch z agenta
+        uses: actions/download-artifact@v4
+        with:
+          name: agent-patch-${{ inputs.run_key }}
+          path: .
+
+      - name: Aplikuj změny
+        run: git apply --binary --whitespace=nowarn agent.patch
+
+      - name: Otevři pull request
+        id: pr
+        uses: peter-evans/create-pull-request@v8
+        with:
+          branch: forge/task-${{ inputs.task_id }}
+          base: main
+          title: "Forge #${{ inputs.task_id }}: ${{ inputs.title }}"
+          commit-message: "forge: ${{ inputs.title }}"
+          delete-branch: true
+          labels: forge-agent
+          body: |
+            Automaticky vytvořeno orchestrem **Forge**.
+
+            | | |
+            |---|---|
+            | Úkol | #${{ inputs.task_id }} – ${{ inputs.title }} |
+            | Druh | `${{ inputs.kind }}` |
+            | Běh | `${{ inputs.run_key }}` |
+            | Model | určen za běhu z bezplatných poskytovatelů |
+
+            **Co zkontrolovat před mergem:** že hra dělá, co zadání říká,
+            a že testy v CI prošly. Agent pracoval bez dohledu – ber to jako
+            návrh, ne jako hotovou věc.
+
+      - name: Report do conductora
+        env:
+          FORGE_URL: ${{ secrets.FORGE_CONDUCTOR_URL }}
+          FORGE_SECRET: ${{ secrets.FORGE_WEBHOOK_SECRET }}
+          FORGE_RUN_KEY: ${{ inputs.run_key }}
+        run: node .forge/report.mjs success "PR vytvoren" "${{ steps.pr.outputs.pull-request-url }}"

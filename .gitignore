@@ -1,0 +1,16 @@
+﻿# Godot
+.godot/
+*.translation
+export_presets.cfg.bak
+
+# Buildy a artefakty (v CI se generují znovu)
+build/
+artifacts/
+assets/_raw/
+
+# Lokální nástroje
+.forge/provider.json
+.forge/*.log
+agent.patch
+agent.log
+.aider*

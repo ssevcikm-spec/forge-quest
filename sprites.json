@@ -1,0 +1,17 @@
+{
+  "_popis": [
+    "Co má pipeline vygenerovat (forge sprites). Uprav si to podle hry.",
+    "name   = název souboru i uzlu ve hře (bez přípony)",
+    "desc   = popis pro SDXL (anglicky, čím konkrétnější, tím lepší)",
+    "size   = cílová velikost ve hře v pixelech (generuje se větší a zmenšuje)",
+    "colors = počet barev výsledné palety (méně = víc pixel-art)",
+    "seed   = volitelné; pevný seed = reprodukovatelný výsledek"
+  ],
+  "sprites": [
+    {"name": "player", "desc": "hero knight character, full body, front view", "size": 64, "colors": 16},
+    {"name": "enemy", "desc": "small green slime monster, front view", "size": 64, "colors": 16},
+    {"name": "coin", "desc": "golden coin, front view", "size": 32, "colors": 12},
+    {"name": "potion", "desc": "red health potion bottle", "size": 32, "colors": 12},
+    {"name": "chest", "desc": "wooden treasure chest, closed", "size": 48, "colors": 16}
+  ]
+}
