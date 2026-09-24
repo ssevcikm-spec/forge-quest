@@ -321,6 +321,11 @@ func _safe_spot(vp: Vector2) -> Vector2:
 func _make_enemy(name: String, vp: Vector2) -> Area2D:
 	var e := Area2D.new()
 	e.name = name
+	# Skript musí být na uzlu DŘÍV, než se nastaví 'smer': do Area2D.new() se
+	# vlastní vlastnost přidat nedá (chyba „Invalid assignment of property or
+	# key 'smer' ... on a base object of type 'Area2D'") a nepřítel by se
+	# vůbec nepřidal do scény. Vlastnost deklaruje scripts/enemy.gd.
+	e.set_script(load("res://scripts/enemy.gd"))
 	e.add_to_group("enemy")
 	var shape := CollisionShape2D.new()
 	var circle := CircleShape2D.new()

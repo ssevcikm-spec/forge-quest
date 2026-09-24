@@ -245,20 +245,33 @@ func _run() -> void:
 				"konec smyčky sedí s délkou skladby (%d vs %d)" % [music.stream.loop_end, expected_loop_end])
 
 	# ------------------------------------------------------------ entity ----
-	# Nepřátelé (když je projekt má) se musí hýbat a nesmí vlézt do zdi.
-	# Test vznikl proto, že tahle vlastnost přišla od agenta bez testu – na
-	# rozbití by se přišlo až ve hře.
+	# Když hra nějaké entity vytváří, musí být OPRAVDU ve scéně. Tahle kontrola
+	# je tady proto, že chyba uvnitř funkce _make_* (třeba přiřazení vlastnosti,
+	# kterou Area2D nemá) funkci přeruší, uzel se vůbec nepřidá – a testy to
+	# nezjistí, protože se ptají jen na mince. Přesně takhle přišla hra v PR #9
+	# o nepřátele a CI přitom hlásilo úspěch.
 	var enemies := get_nodes_in_group("enemy")
+	if main.has_method("_make_enemy"):
+		_check(enemies.size() > 0, "hra vytvořila nepřátele (nalezeno %d)" % enemies.size())
+	if main.has_method("_make_chest"):
+		_check(get_nodes_in_group("chest").size() > 0, "hra vytvořila truhlu")
+
 	if enemies.size() > 0:
 		var before: Array = []
 		for e in enemies:
 			before.append(e.position)
-		for i in 30:
+		# POZOR: v headless režimu se snímky vykreslují maximální rychlostí,
+		# takže „30 snímků" je jen pár milisekund a nepřítel se posune
+		# o setiny pixelu (naměřeno 0,0 px). Měří se proto SKUTEČNÝ čas.
+		var t0 := Time.get_ticks_msec()
+		while Time.get_ticks_msec() - t0 < 400:
 			await process_frame
+		var elapsed := float(Time.get_ticks_msec() - t0) / 1000.0
 		var moved := 0.0
 		for i in enemies.size():
 			moved += before[i].distance_to(enemies[i].position)
-		_check(moved > 0.5, "nepřátelé se hýbou (celkem %.1f px za 30 snímků)" % moved)
+		_check(moved > 0.5,
+			"nepřátelé se hýbou (celkem %.1f px za %.2f s)" % [moved, elapsed])
 
 		var lvl_node = main.get_node_or_null("Level")
 		if lvl_node != null:
