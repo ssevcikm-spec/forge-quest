@@ -41,6 +41,10 @@ func _ready() -> void:
 	var enemy2 := _make_enemy("Enemy2", vp)
 	add_child(enemy2)
 
+	# Přidání truhly
+	var chest := _make_chest(vp)
+	add_child(chest)
+
 
 func _update_hud() -> void:
 	if hud:
@@ -267,3 +271,26 @@ func _on_enemy_touched(other: Area2D, enemy: Area2D) -> void:
 	if other != player or not is_instance_valid(enemy) or not enemy.is_in_group("enemy"):
 		return
 	play_sfx("hurt")
+
+
+func _make_chest(vp: Vector2) -> Area2D:
+	var c := Area2D.new()
+	c.name = "Chest"
+	c.add_to_group("chest")
+	var shape := CollisionShape2D.new()
+	var circle := CircleShape2D.new()
+	circle.radius = 5.0
+	shape.shape = circle
+	c.add_child(shape)
+	c.add_child(_visual("chest", Color(0.8, 0.5, 0.2), Vector2(8, 8)))
+	c.position = Vector2(vp.x / 2.0, vp.y / 2.0)
+	c.area_entered.connect(_on_chest_touched.bind(c))
+	return c
+
+
+func _on_chest_touched(other: Area2D, chest: Area2D) -> void:
+	if other != player or not is_instance_valid(chest) or not chest.is_in_group("chest"):
+		return
+	play_sfx("powerup")
+	chest.remove_from_group("chest")
+	chest.queue_free()
