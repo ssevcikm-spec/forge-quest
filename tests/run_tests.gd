@@ -64,7 +64,7 @@ func _run() -> void:
 	var missing := 0
 	var loaded := 0
 	for dir_path in ["res://assets/sprites", "res://assets/audio/sfx",
-					 "res://assets/tiles", "res://assets/ui"]:
+					 "res://assets/audio/music", "res://assets/tiles", "res://assets/ui"]:
 		var d := DirAccess.open(dir_path)
 		if d == null:
 			continue
@@ -117,6 +117,19 @@ func _run() -> void:
 
 	if ResourceLoader.exists("res://assets/ui/panel.png"):
 		_check(main.get_node_or_null("HudPanel") != null, "UI panel je ve scéně")
+
+	# Hudba: soubor na disku nestačí, musí hrát a mít zapnutou smyčku.
+	if DirAccess.open("res://assets/audio/music") != null:
+		var music = main.get_node_or_null("Music")
+		_check(music != null, "hudba je ve scéně")
+		if music != null and music.stream is AudioStreamWAV:
+			_check(music.stream.loop_mode == AudioStreamWAV.LOOP_FORWARD,
+				"hudba má zapnutou smyčku")
+			# Konec smyčky musí odpovídat CELÉ délce skladby, jinak se hudba
+			# uřízne (přesně to se stalo, když se počet vzorků počítal z bajtů).
+			var expected_loop_end: int = int(music.stream.get_length() * music.stream.mix_rate)
+			_check(abs(music.stream.loop_end - expected_loop_end) <= 2,
+				"konec smyčky sedí s délkou skladby (%d vs %d)" % [music.stream.loop_end, expected_loop_end])
 
 	_finish()
 

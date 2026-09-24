@@ -20,6 +20,7 @@ func _ready() -> void:
 	randomize()
 	_load_sfx()
 	_add_background()
+	_add_music()
 	player = _make_player()
 	add_child(player)
 
@@ -67,6 +68,32 @@ func _add_background() -> void:
 	bg.show_behind_parent = true
 	add_child(bg)
 	move_child(bg, 0)
+
+
+func _add_music() -> void:
+	"""Hudba na pozadí. Smyčku nastavujeme v kódu, protože import .wav ji sám
+	nezapne – a skladby z `forge music` jsou dělané přesně pro smyčku."""
+	for track in ["theme", "chiptune", "calm"]:
+		var path := "res://assets/audio/music/%s.wav" % track
+		if not ResourceLoader.exists(path):
+			continue
+		var stream = load(path)
+		if stream is AudioStreamWAV:
+			# Konec smyčky se bere z DÉLKY, ne z velikosti dat: Godot umí .wav
+			# importovat komprimovaně (IMA ADPCM), takže přepočet z bajtů vyjde
+			# špatně – naměřeno 519 200 místo 1 283 050 vzorků, což by skladbu
+			# uřízlo ve dvou pětinách.
+			stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+			stream.loop_begin = 0
+			stream.loop_end = int(stream.get_length() * stream.mix_rate)
+		var player := AudioStreamPlayer.new()
+		player.name = "Music"
+		player.stream = stream
+		player.volume_db = -9.0
+		add_child(player)
+		player.play()
+		print("[game] hudba: %s" % track)
+		return
 
 
 func _add_ui() -> void:

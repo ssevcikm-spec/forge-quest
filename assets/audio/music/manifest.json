@@ -1,0 +1,117 @@
+{
+  "tracks": [
+    {
+      "track": "chiptune",
+      "file": "chiptune.wav",
+      "style": "chiptune",
+      "bpm": 132,
+      "bars": 16,
+      "scale": "minor",
+      "root_midi": 57,
+      "seconds": 29.09,
+      "progression": [
+        0,
+        5,
+        3,
+        6,
+        0,
+        5,
+        3,
+        6,
+        0,
+        5,
+        3,
+        6,
+        0,
+        5,
+        3,
+        6
+      ],
+      "loop_score": 0.0,
+      "energy_seam": 0.5,
+      "rms": 0.1925,
+      "bands": {
+        "basy (<250 Hz)": 0.54,
+        "stredy (250–2k)": 0.367,
+        "vysky (>2k)": 0.094
+      },
+      "bytes": 2565862
+    },
+    {
+      "track": "calm",
+      "file": "calm.wav",
+      "style": "calm",
+      "bpm": 92,
+      "bars": 16,
+      "scale": "major",
+      "root_midi": 60,
+      "seconds": 41.74,
+      "progression": [
+        0,
+        3,
+        4,
+        3,
+        0,
+        3,
+        4,
+        3,
+        0,
+        3,
+        4,
+        3,
+        0,
+        3,
+        4,
+        3
+      ],
+      "loop_score": 0.0,
+      "energy_seam": 0.76,
+      "rms": 0.2967,
+      "bands": {
+        "basy (<250 Hz)": 0.569,
+        "stredy (250–2k)": 0.429,
+        "vysky (>2k)": 0.002
+      },
+      "bytes": 3681436
+    },
+    {
+      "track": "tense",
+      "file": "tense.wav",
+      "style": "tense",
+      "bpm": 148,
+      "bars": 16,
+      "scale": "phrygian",
+      "root_midi": 50,
+      "seconds": 25.95,
+      "progression": [
+        0,
+        1,
+        0,
+        5,
+        0,
+        1,
+        0,
+        5,
+        0,
+        1,
+        0,
+        5,
+        0,
+        1,
+        0,
+        5
+      ],
+      "loop_score": 0.0,
+      "energy_seam": 0.51,
+      "rms": 0.1908,
+      "bands": {
+        "basy (<250 Hz)": 0.663,
+        "stredy (250–2k)": 0.277,
+        "vysky (>2k)": 0.06
+      },
+      "bytes": 2288476
+    }
+  ],
+  "generated": "2026-09-24 16:25:16",
+  "note": "procedurální chiptune; loop_score ~1 znamená, že se smyčka zacyklí bez lupnutí"
+}

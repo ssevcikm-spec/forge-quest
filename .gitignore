@@ -14,8 +14,7 @@ assets/_raw/
 agent.patch
 agent.log
 .aider*
-
-# Pojistka: soubor, ktery vznikne, kdyz shell rozbije cestu k secretu
+# Pojistka: cokoli, co vypada jako rozbita cesta k secretu
 /C:*Users*
 UsersSsevc*
 .secrets/
