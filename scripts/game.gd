@@ -18,6 +18,7 @@ var player: Area2D
 var level: Node2D
 var hud: Label
 var sfx := {}
+var cas_hry: float = 0.0
 var paused := false
 var pause_label: Label
 var fps_label: Label
@@ -320,6 +321,8 @@ func _input(event: InputEvent) -> void:
 
 
 func _process(delta: float) -> void:
+	cas_hry += delta
+	_spin_coins(cas_hry)
 	if fps_label:
 		fps_label.text = "FPS: %d" % Engine.get_frames_per_second()
 	_move_enemies(delta)
@@ -407,3 +410,7 @@ func _move_enemies(delta: float) -> void:
 			nepritel.smer = -nepritel.smer
 		else:
 			nepritel.position = cil
+func _spin_coins(cas: float) -> void:
+	for mince in get_tree().get_nodes_in_group("coin"):
+		var faze: float = cas * 3.0 + float(mince.get_index())
+		mince.scale = Vector2(abs(cos(faze)), 1.0)
