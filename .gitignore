@@ -1,4 +1,4 @@
-﻿# Godot
+# Godot
 .godot/
 *.translation
 export_presets.cfg.bak
@@ -13,6 +13,10 @@ assets/_raw/
 .forge/*.log
 agent.patch
 agent.log
+# Log z kontrolního spuštění hry. Workflow ho sice píše do RUNNER_TEMP,
+# ale kdyby ho někdo zapsal sem, `git add -A` by ho poslal do patche –
+# přesně tak se dostal do PR #10.
+smoke.log
 .aider*
 # Pojistka: cokoli, co vypada jako rozbita cesta k secretu
 /C:*Users*

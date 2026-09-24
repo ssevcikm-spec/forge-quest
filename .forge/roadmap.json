@@ -91,6 +91,12 @@
       "title": "Tečka hráče na miniatuře mapy",
       "kind": "code",
       "prompt": "V souboru scripts/game.gd přidej na miniaturu mapy tečku hráče. Udělej to takto: (1) v _ready, hned po vytvoření uzlu Minimap (když v _ready žádný Minimap není, nic nedělej a skonči), vytvoř ColorRect s názvem MinimapDot, barvou Color(0.35, 0.85, 1.0), velikostí Vector2(3, 3) a z_index = 9, a přidej ho jako potomka uzlu Minimap; (2) přidej funkci _update_minimap_dot() -> void, která najde uzel Minimap přes get_node_or_null('Minimap') a když je null, skončí; najde v něm potomka MinimapDot přes get_node_or_null('MinimapDot') a když je null, skončí; spočítá var vp: Vector2 = get_viewport_rect().size a nastaví tečce position na Vector2(player.position.x / vp.x * 120.0, player.position.y / vp.y * 64.0); (3) v _process zavolej _update_minimap_dot(). Nic dalšího neměň a nic nemaž."
+    },
+    {
+      "id": "exit-win2",
+      "title": "Východ z úrovně ukončí hru (druhý pokus)",
+      "kind": "code",
+      "prompt": "V souboru scripts/game.gd přidej výhru: v _ready vytvoř Label s názvem WinLabel, textem 'VYHRÁL JSI!', barvou Color(1.0, 0.9, 0.3) a nastav mu visible = false (umísti ho doprostřed obrazovky, stejně jako je udělaný PauseLabel). Ve funkci _on_chest_touched po přehrání zvuku 'powerup' nastav WinLabel.visible = true a get_tree().paused = true. Nic dalšího v projektu neměň a nic nemaž."
     }
   ]
 }
