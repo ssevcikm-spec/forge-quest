@@ -74,10 +74,13 @@ jobs:
           python -m pip install aider-chat
 
       - name: Vyber bezplatného poskytovatele LLM
+        # Klíč se bere z Tajemství, a když tam není, z Proměnných. Je to běžná
+        # záměna (GitHub má „Secrets" a „Variables" vedle sebe) a kvůli ní už
+        # jeden běh zbytečně selhal na „žádný poskytovatel neodpověděl".
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || vars.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY || vars.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY || vars.OPENROUTER_API_KEY }}
         run: node .forge/pick-provider.mjs
 
       - name: Spusť agenta
