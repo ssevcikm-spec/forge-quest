@@ -46,6 +46,34 @@ nepřátele" – kdyby v projektu chyběla, vypadá to jako úspěch.
 Alternativa bez nového souboru je `e.set_meta("smer", …)` / `e.get_meta("smer")`,
 ale vlastní skript je čitelnější.
 
+## 1c. `TextureRect` ignoruje menší velikost, než je textura
+
+```gdscript
+# ŠPATNĚ – miniatura z 480×256 obrázku zakryje celou obrazovku,
+# i když nastavíš 120×64 (Control si drží minimální velikost = textura)
+var mini := TextureRect.new()
+mini.texture = load("res://assets/levels/main.preview.png")
+mini.size = Vector2(120, 64)
+
+# SPRÁVNĚ – povolit menší velikost a nastavit ji AŽ po vložení do stromu
+mini.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+mini.stretch_mode = TextureRect.STRETCH_SCALE
+add_child(mini)                     # nejdřív do scény
+mini.size = Vector2(120, 64)        # teprve teď velikost
+```
+
+Platí pro každý `TextureRect`/`NinePatchRect` s velkým obrázkem. Dvě věci, které
+jsou na tom záludné (obojí naměřeno):
+
+1. `expand_mode` musí být nastavený **před** `size` (jinak se minimum počítá
+   z textury).
+2. Když uzel vzniká uvnitř `_ready()`, **`size` nastavené před `add_child`
+   neplatí** – rozvržení se dopočítá až po vložení do stromu a velikost vrátí na
+   velikost textury. Nastavuj ji až za `add_child`.
+
+Ověřuje se to testem na **velikost a pozici** – test na „nenulovou velikost"
+tuhle vadu mine (480×256 je taky nenulové).
+
 ## 2. Když se skript hry nenačte, poznáš to hned
 
 Testy to řeknou („skript hry jde načíst"), ale **spustit si je musí CI** – ty

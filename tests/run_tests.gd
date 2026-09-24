@@ -292,8 +292,17 @@ func _run() -> void:
 		var mini = main.get_node_or_null("Minimap")
 		_check(mini != null, "miniatura mapy je ve scéně")
 		if mini != null:
+			# „Miniatura" musí být opravdu malá a v rohu. Test na pouhou
+			# nenulovou velikost nestačil: TextureRect má výchozí minimální
+			# velikost rovnou textuře, takže se nastavených 120×64 tiše zahodilo
+			# a miniatura (480×256) zakryla celou obrazovku.
 			_check(mini.size.x > 0.0 and mini.size.y > 0.0,
 				"miniatura má nenulovou velikost (%s)" % str(mini.size))
+			_check(mini.size.x <= 240.0 and mini.size.y <= 140.0,
+				"miniatura je malá, ne přes celou obrazovku (%s)" % str(mini.size))
+			var vp_rozmer := get_root().get_visible_rect().size
+			_check(mini.position.x > vp_rozmer.x / 2.0 and mini.position.y > vp_rozmer.y / 2.0,
+				"miniatura je v pravém dolním rohu (%s)" % str(mini.position))
 
 	if zdroj.contains("WinLabel"):
 		var win = main.get_node_or_null("WinLabel")

@@ -58,10 +58,18 @@ func _ready() -> void:
 		minimap.name = "Minimap"
 		minimap.texture = load("res://assets/levels/main.preview.png")
 		minimap.position = Vector2(get_viewport_rect().size.x - 120 - 4, get_viewport_rect().size.y - 64 - 4)
-		minimap.size = Vector2(120, 64)
+		# POZOR na pořadí: expand_mode musí být nastavený před size a size až
+		# POTÉ, co je uzel ve stromu. TextureRect má výchozí EXPAND_KEEP_SIZE
+		# („minimální velikost = velikost textury"), náhled mapy je 480×256,
+		# takže se nastavených 120×64 tiše zahodilo a miniatura zakryla celou
+		# obrazovku. Uvnitř _ready() se rozvržení dopočítá až po přidání do
+		# stromu – proto se velikost nastavuje až za add_child.
+		minimap.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		minimap.custom_minimum_size = Vector2(120, 64)
 		minimap.stretch_mode = TextureRect.STRETCH_SCALE
 		minimap.z_index = 8
 		add_child(minimap)
+		minimap.size = Vector2(120, 64)
 
 
 func _update_hud() -> void:
@@ -319,14 +327,18 @@ func _process(delta: float) -> void:
 
 func _safe_spot(vp: Vector2) -> Vector2:
 	"""Náhodné místo, které je průchozí. Bez mapy je to cokoliv v obraze –
-	s mapou by náhodná pozice mohla skončit ve zdi (to se stávalo)."""
+	s mapou by náhodná pozice mohla skončit ve zdi (to se stávalo).
+
+	Navíc se vyhýbá místu, kde stojí hráč: nepřítel, který se objeví přímo na
+	hráči, ho zraní dřív, než se hra rozeběhne."""
 	if level == null:
 		return Vector2(randf_range(24.0, vp.x - 24.0), randf_range(24.0, vp.y - 24.0))
+	var odstup := 28.0
 	for i in 40:
 		var p := Vector2(randf_range(8.0, vp.x - 8.0), randf_range(8.0, vp.y - 8.0))
-		if level.is_walkable_at(p):
+		if level.is_walkable_at(p) and (player == null or p.distance_to(player.position) >= odstup):
 			return p
-	return level.cell_center(level.spawn_cell.x, level.spawn_cell.y)
+	return level.cell_center(level.spawn_cell.x, level.spawn_cell.y) + Vector2(odstup, odstup)
 
 
 func _make_enemy(name: String, vp: Vector2) -> Area2D:
