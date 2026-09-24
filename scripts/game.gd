@@ -14,7 +14,8 @@ var score := 0
 var player: Area2D
 var hud: Label
 var sfx := {}
-
+var paused := false
+var pause_label: Label
 
 func _ready() -> void:
 	randomize()
@@ -49,7 +50,7 @@ func _texture(rel: String) -> Texture2D:
 
 
 func _add_background() -> void:
-	"""Dlaždicová podlaha z assets/tiles. Bez ní zůstane jen jednolitá barva."""
+	"""Dlaždicová podloha z assets/tiles. Bez ní zůstane jen jednolitá barva."""
 	var tex := _texture("tiles/grass")
 	if tex == null:
 		return
@@ -117,6 +118,13 @@ func _add_ui() -> void:
 	hud.position = Vector2(10, 8)
 	add_child(hud)
 	_update_hud()
+
+	pause_label = Label.new()
+	pause_label.name = "PauseLabel"
+	pause_label.text = "PAUZA"
+	pause_label.position = get_viewport_rect().size / 2.0
+	pause_label.visible = false
+	add_child(pause_label)
 
 
 func _visual(asset_name: String, fallback: Color, size: Vector2) -> Node2D:
@@ -214,3 +222,10 @@ func _on_coin_touched(other: Area2D, coin: Area2D) -> void:
 	_update_hud()
 	if score >= COIN_COUNT:
 		play_sfx("win")
+
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.keycode == KEY_SPACE and event.pressed:
+		paused = not paused
+		get_tree().paused = paused
+		pause_label.visible = paused
