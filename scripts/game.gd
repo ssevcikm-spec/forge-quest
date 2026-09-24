@@ -16,6 +16,7 @@ var hud: Label
 var sfx := {}
 var paused := false
 var pause_label: Label
+var fps_label: Label
 
 func _ready() -> void:
 	randomize()
@@ -126,6 +127,11 @@ func _add_ui() -> void:
 	pause_label.visible = false
 	add_child(pause_label)
 
+	fps_label = Label.new()
+	fps_label.name = "Fps"
+	fps_label.position = Vector2(get_viewport_rect().size.x - 100, 8)
+	add_child(fps_label)
+
 
 func _visual(asset_name: String, fallback: Color, size: Vector2) -> Node2D:
 	var holder := Node2D.new()
@@ -229,3 +235,8 @@ func _input(event: InputEvent) -> void:
 		paused = not paused
 		get_tree().paused = paused
 		pause_label.visible = paused
+
+
+func _process(delta: float) -> void:
+	if fps_label:
+		fps_label.text = "FPS: %d" % Engine.get_frames_per_second()
