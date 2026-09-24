@@ -281,6 +281,40 @@ func _run() -> void:
 					mimo += 1
 			_check(mimo == 0, "nepřátelé zůstávají na průchozích políčkách (%d mimo)" % mimo)
 
+	# -------------------------------------------------- volitelné funkce ----
+	# Testy, které se samy zapnou, až hra danou funkci dostane. Rozhoduje se
+	# podle zdrojového textu skriptu: dokud v něm funkce není, kontrola se
+	# přeskočí (šablona je bez nich); jakmile ji agent přidá, začne platit.
+	# Důvod: PR #9 prošel se zeleným CI, a přitom se část scény vůbec nevytvořila.
+	var zdroj := FileAccess.get_file_as_string("res://scripts/game.gd")
+
+	if zdroj.contains("Minimap"):
+		var mini = main.get_node_or_null("Minimap")
+		_check(mini != null, "miniatura mapy je ve scéně")
+		if mini != null:
+			_check(mini.size.x > 0.0 and mini.size.y > 0.0,
+				"miniatura má nenulovou velikost (%s)" % str(mini.size))
+
+	if zdroj.contains("WinLabel"):
+		var win = main.get_node_or_null("WinLabel")
+		_check(win != null, "výherní hlášení je ve scéně")
+		if win != null:
+			_check(not win.visible, "výherní hlášení je na začátku skryté")
+
+	if zdroj.contains("_spin_coins"):
+		var mince := get_nodes_in_group("coin")
+		if mince.size() > 0:
+			var sirky: Array = []
+			for c in mince:
+				sirky.append(c.scale.x)
+			var t_spin := Time.get_ticks_msec()
+			while Time.get_ticks_msec() - t_spin < 300:
+				await process_frame
+			var zmena := 0.0
+			for i in mince.size():
+				zmena += abs(sirky[i] - mince[i].scale.x)
+			_check(zmena > 0.01, "mince se otáčejí (změna šířky %.3f)" % zmena)
+
 	_finish()
 
 
