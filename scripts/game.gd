@@ -35,6 +35,12 @@ func _ready() -> void:
 	print("[game] připraveno: hráč + %d mincí, zvuků načteno: %d, dlaždice: %s" % [
 		COIN_COUNT, sfx.size(), "ano" if _texture("tiles/grass") else "ne"])
 
+	# Přidání nepřátel
+	var enemy1 := _make_enemy("Enemy1", vp)
+	add_child(enemy1)
+	var enemy2 := _make_enemy("Enemy2", vp)
+	add_child(enemy2)
+
 
 func _update_hud() -> void:
 	if hud:
@@ -240,3 +246,24 @@ func _input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
 	if fps_label:
 		fps_label.text = "FPS: %d" % Engine.get_frames_per_second()
+
+
+func _make_enemy(name: String, vp: Vector2) -> Area2D:
+	var e := Area2D.new()
+	e.name = name
+	e.add_to_group("enemy")
+	var shape := CollisionShape2D.new()
+	var circle := CircleShape2D.new()
+	circle.radius = 5.0
+	shape.shape = circle
+	e.add_child(shape)
+	e.add_child(_visual("enemy", Color(1.0, 0.0, 0.0), Vector2(8, 8)))
+	e.position = Vector2(randf_range(24.0, vp.x - 24.0), randf_range(24.0, vp.y - 24.0))
+	e.area_entered.connect(_on_enemy_touched.bind(e))
+	return e
+
+
+func _on_enemy_touched(other: Area2D, enemy: Area2D) -> void:
+	if other != player or not is_instance_valid(enemy) or not enemy.is_in_group("enemy"):
+		return
+	play_sfx("hurt")
