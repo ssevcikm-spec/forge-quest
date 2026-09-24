@@ -214,6 +214,14 @@ func _add_ui() -> void:
 	pause_label.visible = false
 	add_child(pause_label)
 
+	var win_label = Label.new()
+	win_label.name = "WinLabel"
+	win_label.text = "VYHRÁL JSI!"
+	win_label.position = get_viewport_rect().size / 2.0
+	win_label.visible = false
+	win_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.3))
+	add_child(win_label)
+
 	fps_label = Label.new()
 	fps_label.name = "Fps"
 	fps_label.position = Vector2(get_viewport_rect().size.x - 100, 8)
@@ -429,6 +437,10 @@ func _on_chest_touched(other: Area2D, chest: Area2D) -> void:
 	play_sfx("powerup")
 	chest.remove_from_group("chest")
 	chest.queue_free()
+	var win_label := get_node_or_null('WinLabel')
+	if win_label:
+		win_label.visible = true
+		get_tree().paused = true
 
 
 func _move_enemies(delta: float) -> void:
