@@ -30,6 +30,8 @@ func _ready() -> void:
 		add_child(c)
 
 	_add_ui()
+	_make_enemy("Enemy1", vp)
+	_make_enemy("Enemy2", vp)
 	print("[game] připraveno: hráč + %d mincí, zvuků načteno: %d, dlaždice: %s" % [
 		COIN_COUNT, sfx.size(), "ano" if _texture("tiles/grass") else "ne"])
 
@@ -214,3 +216,25 @@ func _on_coin_touched(other: Area2D, coin: Area2D) -> void:
 	_update_hud()
 	if score >= COIN_COUNT:
 		play_sfx("win")
+
+
+func _make_enemy(name: String, vp: Vector2) -> Area2D:
+	var e := Area2D.new()
+	e.name = name
+	e.add_to_group("enemy")
+	var shape := CollisionShape2D.new()
+	var circle := CircleShape2D.new()
+	circle.radius = 5.0
+	shape.shape = circle
+	e.add_child(shape)
+	e.add_child(_visual("enemy", Color(1.0, 0.0, 0.0), Vector2(8, 8)))
+	e.position = Vector2(randf_range(24.0, vp.x - 24.0), randf_range(24.0, vp.y - 24.0))
+	e.area_entered.connect(_on_enemy_touched.bind(e))
+	add_child(e)
+	return e
+
+
+func _on_enemy_touched(other: Area2D, enemy: Area2D) -> void:
+	if other != player or not is_instance_valid(enemy) or not enemy.is_in_group("enemy"):
+		return
+	play_sfx("hurt")
