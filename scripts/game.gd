@@ -52,6 +52,17 @@ func _ready() -> void:
 	var chest := _make_chest(vp)
 	add_child(chest)
 
+	# Přidání miniaturu mapy
+	if ResourceLoader.exists("res://assets/levels/main.preview.png"):
+		var minimap := TextureRect.new()
+		minimap.name = "Minimap"
+		minimap.texture = load("res://assets/levels/main.preview.png")
+		minimap.position = Vector2(get_viewport_rect().size.x - 120 - 4, get_viewport_rect().size.y - 64 - 4)
+		minimap.size = Vector2(120, 64)
+		minimap.stretch_mode = TextureRect.STRETCH_SCALE
+		minimap.z_index = 8
+		add_child(minimap)
+
 
 func _update_hud() -> void:
 	if hud:
