@@ -75,6 +75,13 @@ func _ready() -> void:
 		add_child(minimap)
 		minimap.size = Vector2(120, 64)
 
+		var dot := ColorRect.new()
+		dot.name = "MinimapDot"
+		dot.color = Color(0.35, 0.85, 1.0)
+		dot.size = Vector2(3, 3)
+		dot.z_index = 9
+		minimap.add_child(dot)
+
 
 func _update_hud() -> void:
 	if hud:
@@ -330,12 +337,23 @@ func _input(event: InputEvent) -> void:
 			music.stream_paused = not music.stream_paused
 
 
+func _update_minimap_dot() -> void:
+	var minimap := get_node_or_null('Minimap')
+	if minimap == null:
+		return
+	var dot := minimap.get_node_or_null('MinimapDot')
+	if dot == null:
+		return
+	var vp: Vector2 = get_viewport_rect().size
+	dot.position = Vector2(player.position.x / vp.x * 120.0, player.position.y / vp.y * 64.0)
+
 func _process(delta: float) -> void:
 	cas_hry += delta
 	_spin_coins(cas_hry)
 	if fps_label:
 		fps_label.text = "FPS: %d" % Engine.get_frames_per_second()
 	_move_enemies(delta)
+	_update_minimap_dot()
 
 
 func _safe_spot(vp: Vector2) -> Vector2:
