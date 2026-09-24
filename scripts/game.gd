@@ -14,6 +14,7 @@ const LEVEL_NAME := "main"
 
 var score := 0
 var coin_total := COIN_COUNT
+var best: int = 0
 var player: Area2D
 var level: Node2D
 var hud: Label
@@ -24,6 +25,7 @@ var pause_label: Label
 var fps_label: Label
 
 func _ready() -> void:
+	_load_best()
 	randomize()
 	_load_sfx()
 	_add_background()
@@ -75,7 +77,7 @@ func _ready() -> void:
 
 func _update_hud() -> void:
 	if hud:
-		hud.text = "Skóre: %d / %d (šipky = pohyb, mezerník = pauza)" % [score, coin_total]
+		hud.text = "Skóre: %d / %d (nejlepší: %d)" % [score, coin_total, best]
 
 
 # ----------------------------------------------------------------- assety ----
@@ -305,6 +307,9 @@ func _on_coin_touched(other: Area2D, coin: Area2D) -> void:
 	if other != player or not is_instance_valid(coin) or not coin.is_in_group("coin"):
 		return
 	score += 1
+	if score > best:
+		best = score
+		_save_best()
 	play_sfx("coin")
 	coin.remove_from_group("coin")
 	coin.queue_free()
@@ -418,3 +423,13 @@ func _spin_coins(cas: float) -> void:
 	for mince in get_tree().get_nodes_in_group("coin"):
 		var faze: float = cas * 3.0 + float(mince.get_index())
 		mince.scale = Vector2(abs(cos(faze)), 1.0)
+func _load_best() -> void:
+	var cfg := ConfigFile.new()
+	var chyba: int = cfg.load('user://best.cfg')
+	if chyba == OK:
+		best = int(cfg.get_value('hra', 'skore', 0))
+
+func _save_best() -> void:
+	var cfg := ConfigFile.new()
+	cfg.set_value('hra', 'skore', best)
+	cfg.save('user://best.cfg')
