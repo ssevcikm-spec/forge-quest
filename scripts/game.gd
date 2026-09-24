@@ -318,6 +318,10 @@ func _input(event: InputEvent) -> void:
 		paused = not paused
 		get_tree().paused = paused
 		pause_label.visible = paused
+	elif event is InputEventKey and event.keycode == KEY_M and event.pressed:
+		var music := get_node_or_null('Music')
+		if music:
+			music.stream_paused = not music.stream_paused
 
 
 func _process(delta: float) -> void:
