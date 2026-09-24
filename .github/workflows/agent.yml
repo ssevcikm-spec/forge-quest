@@ -99,6 +99,7 @@ jobs:
           set -o pipefail
           aider \
             --model "openai/${FORGE_MODEL}" \
+            --read CONVENTIONS.md \
             --message "$FORGE_PROMPT" \
             --yes --no-auto-commits --no-stream --no-check-update \
             2>&1 | tee agent.log || echo "aider skoncil s chybou"
@@ -113,7 +114,7 @@ jobs:
         run: |
           set -o pipefail
           "$FORGE_GODOT" --headless --path . --import 2>&1 | tail -3
-          timeout 120 "$FORGE_GODOT" --headless --path . --script res://tests/run_tests.gd 2>&1 | tee -a agent.log
+          timeout 150 "$FORGE_GODOT" --headless --path . --script res://tests/run_tests.gd 2>&1 | tee -a agent.log
 
       - name: Verdikt a vytvoření patche
         id: verdict

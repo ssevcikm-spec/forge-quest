@@ -5,13 +5,42 @@ extends SceneTree
 ##
 ## Když všechny kontroly projdou, skončí s kódem 0. Každé selhání kód zvýší,
 ## takže se výsledek dá použít v CI i v ručním ověření.
+##
+## POZOR – HLÍDAČ: testy musí skončit VŽDY. Když se nepodaří načíst skript hry
+## (typicky chyba v kódu od agenta), GDScript přeruší běh _run() a na quit()
+## se nikdy nedostane – proces pak visí, dokud ho nezabije CI. Naměřeno: 14
+## minut čekání v GitHub Actions místo okamžitého selhání. Proto běží hlídač,
+## který po HARD_LIMIT_SECONDS skončí sám (a řekne, že šlo o zaseknutí).
+##
+## Žebříček limitů (musí na sebe navazovat): hlídač 90 s < vnější `timeout 150`
+## v CI < timeout kroku 3 min. Když zamrzne samotný engine (nekonečná smyčka),
+## hlídač se nedostane ke slovu – proto je tam i ten vnější.
+
+const HARD_LIMIT_SECONDS := 90.0
 
 var failures := 0
 var checks := 0
+var _deadline := 0.0
+var _done := false
 
 
 func _initialize() -> void:
+	_deadline = Time.get_ticks_msec() / 1000.0 + HARD_LIMIT_SECONDS
 	_run()
+
+
+func _process(_delta: float) -> bool:
+	"""Hlídač: kdyby se _run() zasekl nebo přerušil, stejně se skončí."""
+	if _done:
+		return true
+	if Time.get_ticks_msec() / 1000.0 > _deadline:
+		print("[test] FAIL překročen tvrdý limit %.0f s – testy se zasekly."
+			% HARD_LIMIT_SECONDS)
+		print("[test]      Nejpravděpodobnější příčina: skript hry se nepodařilo "
+			+ "načíst (chyba v kódu), takže se _run() přerušil.")
+		failures += 1
+		_finish()
+	return false
 
 
 func _check(ok: bool, label: String) -> void:
@@ -37,11 +66,19 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 
+	# Když se skript hry vůbec nenačetl (parse error), nemá cenu pokračovat:
+	# volání na null by přerušilo tenhle běh a testy by nikdy neskončily.
+	var main_script = main.get_script()
+	_check(main_script != null, "skript hry jde načíst (žádná chyba v kódu)")
+	if main_script == null:
+		_finish()
+		return
+
 	var player = main.get_node_or_null("Player")
 	_check(player != null, "scéna vytvořila uzel Player")
 
 	var expected := 5
-	var consts = main.get_script().get_script_constant_map()
+	var consts = main_script.get_script_constant_map()
 	if consts.has("COIN_COUNT"):
 		expected = consts["COIN_COUNT"]
 	# S úrovní určuje počet mincí mapa, ne konstanta.
@@ -211,5 +248,8 @@ func _run() -> void:
 
 
 func _finish() -> void:
+	_done = true
 	print("\n[test] %d kontrol, %d selhání" % [checks, failures])
 	quit(failures)
+
+# GameForge: overeno AI

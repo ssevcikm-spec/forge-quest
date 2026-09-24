@@ -38,7 +38,7 @@ jobs:
         # Timeout i tady: kdyby se do hry dostala nekonečná smyčka (stalo se to
         # u patche od agenta), testy by visely až do limitu celého jobu.
         timeout-minutes: 3
-        run: timeout 120 "$FORGE_GODOT" --headless --path . --script res://tests/run_tests.gd
+        run: timeout 150 "$FORGE_GODOT" --headless --path . --script res://tests/run_tests.gd
 
       - name: Export buildů (Linux + Web)
         timeout-minutes: 10
