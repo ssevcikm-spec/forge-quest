@@ -86,7 +86,6 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY || vars.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY || vars.OPENROUTER_API_KEY }}
         run: node .forge/pick-provider.mjs
-
       - name: Spusť agenta
         # Zadání jde do skriptu přes proměnnou, ne přes ${{ }} – jinak by se
         # text z issue mohl vložit do shellu jako kód (script injection).
@@ -147,6 +146,8 @@ jobs:
     if: needs.agent.outputs.status == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      pr_number: ${{ steps.pr.outputs.pull-request-number }}
     permissions:
       contents: write
       pull-requests: write
@@ -206,3 +207,91 @@ jobs:
           FORGE_SECRET: ${{ secrets.FORGE_WEBHOOK_SECRET }}
           FORGE_RUN_KEY: ${{ inputs.run_key }}
         run: node .forge/report.mjs success "PR vytvoren" "${{ steps.pr.outputs.pull-request-url }}"
+
+  # ---------------------------------------------------------------------------
+  # AUTOMATICKÉ SLOUČENÍ
+  #
+  # Uživatel většinu pull requestů kontrolovat nebude, takže je potřeba, aby se
+  # bezpečné změny sloučily samy – ale jen ty, u kterých to je bezpečné.
+  # Pravidla (všechna musí projít):
+  #   1) změna se smí dotknout JEN scripts/ a assets/,
+  #   2) NIKDY tests/, .github/, .forge/ ani project.godot – jinak by si agent
+  #      mohl „opravit" vlastní kontrolu, což je přesně to, co nechceme,
+  #   3) změna je malá (do 60 řádků),
+  #   4) nezávisle to potvrdí CI na tom PR (ne jen agent sám).
+  # Když cokoli neprojde, PR zůstane otevřený a dostane komentář s vysvětlením.
+  # ---------------------------------------------------------------------------
+  auto-merge:
+    name: Automatické sloučení (jen bezpečné změny)
+    needs: [agent, pull-request]
+    if: needs.pull-request.outputs.pr_number != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Pravidla – smí se to sloučit samo?
+        id: gate
+        env:
+          GH_TOKEN: ${{ secrets.FORGE_PAT }}
+          PR: ${{ needs.pull-request.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+          add=$(gh pr view "$PR" --json additions --jq '.additions')
+          del=$(gh pr view "$PR" --json deletions --jq '.deletions')
+          gh pr view "$PR" --json files --jq '.files[].path' > /tmp/files.txt
+          echo "změna: +$add -$del"; sed 's/^/  /' /tmp/files.txt
+          ok=1
+          while read -r f; do
+            case "$f" in
+              scripts/*|assets/*) ;;
+              *) echo "!! mimo povolené složky: $f"; ok=0 ;;
+            esac
+          done < /tmp/files.txt
+          while read -r f; do
+            case "$f" in
+              tests/*|.github/*|.forge/*|project.godot) echo "!! chráněný soubor: $f"; ok=0 ;;
+            esac
+          done < /tmp/files.txt
+          if [ $((add + del)) -gt 60 ]; then echo "!! velká změna ($((add + del)) řádků)"; ok=0; fi
+          echo "ok=$ok" >> "$GITHUB_OUTPUT"
+
+      - name: Počkej, až testy nezávisle potvrdí CI
+        id: ci
+        if: steps.gate.outputs.ok == '1'
+        env:
+          GH_TOKEN: ${{ secrets.FORGE_PAT }}
+          PR: ${{ needs.pull-request.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 30); do
+            roll=$(gh pr view "$PR" --json statusCheckRollup \
+                   --jq '[.statusCheckRollup[]? | (.conclusion // "PENDING")] | join(",")' || echo "")
+            echo "pokus $i: ${roll:-'(zatím žádné kontroly)'}"
+            case "$roll" in
+              *FAILURE*|*CANCELLED*|*TIMED_OUT*|*ACTION_REQUIRED*) echo "ci=bad" >> "$GITHUB_OUTPUT"; exit 0 ;;
+            esac
+            if [ -n "$roll" ] && ! echo "$roll" | grep -qE 'PENDING|SKIPPED|NEUTRAL|^,|^$'; then
+              echo "ci=ok" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+            sleep 20
+          done
+          echo "ci=timeout" >> "$GITHUB_OUTPUT"
+
+      - name: Sloučit (squash) a smazat větev
+        if: steps.gate.outputs.ok == '1' && steps.ci.outputs.ci == 'ok'
+        env:
+          GH_TOKEN: ${{ secrets.FORGE_PAT }}
+          PR: ${{ needs.pull-request.outputs.pr_number }}
+        run: gh pr merge "$PR" --squash --delete-branch
+
+      - name: Když pravidla neprošla – nechá se k ruční kontrole
+        if: steps.gate.outputs.ok != '1' || steps.ci.outputs.ci != 'ok'
+        env:
+          GH_TOKEN: ${{ secrets.FORGE_PAT }}
+          PR: ${{ needs.pull-request.outputs.pr_number }}
+        run: |
+          gh pr comment "$PR" --body "🤖 **Automatické sloučení neproběhlo** (pravidla: ${{ steps.gate.outputs.ok }}, CI: ${{ steps.ci.outputs.ci }}).
+
+          Buď je změna větší než 60 řádků, sahá mimo \`scripts/\` a \`assets/\`, nebo se dotýká testů či orchestrace – a to agent sám nesmí. Podívej se na ni prosím ručně."
