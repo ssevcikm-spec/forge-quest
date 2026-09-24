@@ -15,6 +15,7 @@ const LEVEL_NAME := "main"
 var score := 0
 var coin_total := COIN_COUNT
 var best: int = 0
+var lives: int = 3
 var player: Area2D
 var level: Node2D
 var hud: Label
@@ -77,7 +78,7 @@ func _ready() -> void:
 
 func _update_hud() -> void:
 	if hud:
-		hud.text = "Skóre: %d / %d (nejlepší: %d)" % [score, coin_total, best]
+		hud.text = "Skóre: %d / %d (nejlepší: %d)   Životy: %d" % [score, coin_total, best, lives]
 
 
 # ----------------------------------------------------------------- assety ----
@@ -378,6 +379,13 @@ func _on_enemy_touched(other: Area2D, enemy: Area2D) -> void:
 	if other != player or not is_instance_valid(enemy) or not enemy.is_in_group("enemy"):
 		return
 	play_sfx("hurt")
+	lives -= 1
+	_update_hud()
+	enemy.visible = false
+	enemy.remove_from_group("enemy")
+	enemy.queue_free()
+	if lives <= 0:
+		get_tree().paused = true
 
 
 func _make_chest(vp: Vector2) -> Area2D:
