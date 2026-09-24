@@ -36,7 +36,7 @@ func _ready() -> void:
 
 func _update_hud() -> void:
 	if hud:
-		hud.text = "Skóre: %d / %d" % [score, COIN_COUNT]
+		hud.text = "Score: %d / %d (sipky = pohyb)" % [score, COIN_COUNT]
 
 
 # ----------------------------------------------------------------- assety ----
