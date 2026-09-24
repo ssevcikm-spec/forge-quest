@@ -115,6 +115,15 @@ jobs:
           set -o pipefail
           "$FORGE_GODOT" --headless --path . --import 2>&1 | tail -3
           timeout 150 "$FORGE_GODOT" --headless --path . --script res://tests/run_tests.gd 2>&1 | tee -a agent.log
+          # Hra se musí spustit bez chyby ve skriptu. Exit kód to neřekne –
+          # naměřeno: hra s chybou skončí s exit=0 (PR #9 takhle přišel o všechny
+          # nepřátele a testy i CI hlásily úspěch). Kontroluje se proto výstup.
+          timeout 60 "$FORGE_GODOT" --headless --path . --quit-after 120 > smoke.log 2>&1 || true
+          if grep -q "SCRIPT ERROR" smoke.log; then
+            echo "::error::Patch se sice načte, ale hra běží s chybou ve skriptu"
+            grep -n "SCRIPT ERROR" smoke.log | head -5
+            exit 1
+          fi
 
       - name: Verdikt a vytvoření patche
         id: verdict

@@ -40,6 +40,20 @@ jobs:
         timeout-minutes: 3
         run: timeout 150 "$FORGE_GODOT" --headless --path . --script res://tests/run_tests.gd
 
+      - name: Hra se spustí bez chyby ve skriptu
+        # Exit kód NESTAČÍ: hra s chybou ve skriptu skončí s exit=0 a chybu jen
+        # vypíše (naměřeno: PR #9 takhle tiše přišel o všechny nepřátele a CI
+        # hlásilo úspěch). Proto se hledá "SCRIPT ERROR" ve výstupu.
+        timeout-minutes: 2
+        run: |
+          set -o pipefail
+          timeout 60 "$FORGE_GODOT" --headless --path . --quit-after 120 2>&1 | tee smoke.log
+          if grep -q "SCRIPT ERROR" smoke.log; then
+            echo "::error::Hra se spustí, ale skript hlásí chybu – část scény se nevytvořila"
+            grep -n "SCRIPT ERROR" smoke.log | head -5
+            exit 1
+          fi
+
       - name: Export buildů (Linux + Web)
         timeout-minutes: 10
         run: |
