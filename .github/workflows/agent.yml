@@ -151,7 +151,12 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      # Větev PR se staví z AKTUÁLNÍHO main (ne z toho, jaký byl v okamžiku
+      # zadání) – kdyby uživatel mezitím něco mergnul, změna se aplikuje
+      # na nejnovější stav a nevznikne zbytečný konflikt.
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Stáhni patch z agenta
         uses: actions/download-artifact@v4
