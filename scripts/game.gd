@@ -303,6 +303,7 @@ func _input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
 	if fps_label:
 		fps_label.text = "FPS: %d" % Engine.get_frames_per_second()
+	_move_enemies(delta)
 
 
 func _safe_spot(vp: Vector2) -> Vector2:
@@ -328,6 +329,7 @@ func _make_enemy(name: String, vp: Vector2) -> Area2D:
 	e.add_child(shape)
 	e.add_child(_visual("enemy", Color(1.0, 0.0, 0.0), Vector2(8, 8)))
 	e.position = _safe_spot(vp)
+	e.smer = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)).normalized()
 	e.area_entered.connect(_on_enemy_touched.bind(e))
 	return e
 
@@ -361,3 +363,19 @@ func _on_chest_touched(other: Area2D, chest: Area2D) -> void:
 	play_sfx("powerup")
 	chest.remove_from_group("chest")
 	chest.queue_free()
+
+
+func _move_enemies(delta: float) -> void:
+	var level_node := get_tree().get_first_node_in_group("level")
+	for nepritel in get_tree().get_nodes_in_group("enemy"):
+		var cil: Vector2 = nepritel.position + nepritel.smer * 40.0 * delta
+		var vp := get_viewport_rect().size
+		if level_node != null and level_node.has_method("is_walkable_at"):
+			if not level_node.is_walkable_at(cil):
+				nepritel.smer = -nepritel.smer
+			else:
+				nepritel.position = cil
+		elif cil.x < 0 or cil.x > vp.x or cil.y < 0 or cil.y > vp.y:
+			nepritel.smer = -nepritel.smer
+		else:
+			nepritel.position = cil
