@@ -166,6 +166,12 @@ jobs:
         id: pr
         uses: peter-evans/create-pull-request@v8
         with:
+          # Vlastní token (PAT). Výchozí GITHUB_TOKEN nemůže zakládat pull
+          # requesty, dokud to správce repa v nastavení nepovolí – a náš první
+          # běh na tom spadl ("GitHub Actions is not permitted to create or
+          # approve pull requests"). Výhoda navíc: PR z PAT spustí navazující CI,
+          # což PR z GITHUB_TOKEN neumí.
+          token: ${{ secrets.FORGE_PAT }}
           branch: forge/task-${{ inputs.task_id }}
           base: main
           title: "Forge #${{ inputs.task_id }}: ${{ inputs.title }}"
