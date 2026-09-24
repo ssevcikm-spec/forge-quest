@@ -2,24 +2,53 @@
   "_popis": [
     "Řetězec bezplatných poskytovatelů LLM pro běh v GitHub Actions.",
     "Zkouší se popořadě; první, který odpoví, vyhrává. Klíče se berou z prostředí",
-    "(v Actions z GitHub Secrets). Ceny a limity se mění – ověřeno 09/2026:",
-    "  gemini     – free tier, bez karty, ~1000 požadavků/den (limity Google nezveřejňuje)",
-    "  groq       – free trvale bez karty, 30 RPM / 1000 RPD, gpt-oss-120b",
-    "  openrouter – modely s příponou :free, 50 požadavků/den (1000 po dobití kreditu)",
-    "Poznámka: Cerebras zrušil trvalý free tier a GitHub Models byly 30. 7. 2026 zrušeny."
+    "(v Actions z GitHub Secrets nebo Variables). Limity se mění – ověřeno 09/2026:",
+    "  gemini     – free tier, ~20 požadavků na model a den (naměřeno!), bez karty",
+    "  poradi: mistral a cerebras odpovidaji (overeno 24. 9.), gemini ma casto 503 a jen ~20 dotazu/den",
+    "  cerebras   – gpt-oss-120b; trvalý free tier zrušen, jede z trial kreditu",
+    "  groq       – free 30 RPM/1000 RPD, ale přihlášení dělalo problémy",
+    "  openrouter – modely s příponou :free, 50 požadavků/den bez kreditů",
+    "Pořadí je záměrně takové, aby první byly ty s největší šancí odpovědět."
   ],
   "providers": [
+    {
+      "name": "mistral",
+      "baseUrl": "https://api.mistral.ai/v1",
+      "keyEnv": "MISTRAL_API_KEY",
+      "models": [
+        "codestral-latest",
+        "mistral-large-latest",
+        "open-mistral-nemo"
+      ]
+    },
+    {
+      "name": "cerebras",
+      "baseUrl": "https://api.cerebras.ai/v1",
+      "keyEnv": "CEREBRAS_API_KEY",
+      "models": [
+        "gpt-oss-120b",
+        "qwen-3-32b"
+      ]
+    },
     {
       "name": "gemini",
       "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
       "keyEnv": "GEMINI_API_KEY",
-      "models": ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash"]
+      "models": [
+        "gemini-flash-latest",
+        "gemini-2.5-flash",
+        "gemini-2.0-flash"
+      ]
     },
     {
       "name": "groq",
       "baseUrl": "https://api.groq.com/openai/v1",
       "keyEnv": "GROQ_API_KEY",
-      "models": ["openai/gpt-oss-120b", "llama-3.3-70b-versatile", "openai/gpt-oss-20b"]
+      "models": [
+        "openai/gpt-oss-120b",
+        "llama-3.3-70b-versatile",
+        "openai/gpt-oss-20b"
+      ]
     },
     {
       "name": "openrouter",
