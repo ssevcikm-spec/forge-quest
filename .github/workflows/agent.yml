@@ -110,12 +110,52 @@ jobs:
         # agenta obsahoval nekonečnou smyčku, Godot se zasekl a krok visel
         # 15+ minut (naměřeno) – místo rychlého „testy selhaly" se čekalo na
         # timeout celého jobu. 3 minuty jsou 20× víc, než testy reálně trvají.
-        timeout-minutes: 3
+        timeout-minutes: 5
         id: tests
         run: |
           set -o pipefail
           "$FORGE_GODOT" --headless --path . --import 2>&1 | tail -3
-          timeout 150 "$FORGE_GODOT" --headless --path . --script res://tests/run_tests.gd 2>&1 | tee -a agent.log
+
+          spust_testy() {
+            timeout 150 "$FORGE_GODOT" --headless --path . \
+              --script res://tests/run_tests.gd 2>&1 | tee -a agent.log
+          }
+
+          if ! spust_testy; then
+            # MECHANICKÁ OPRAVA TYPOVÉ CHYBY. Slabé modely opakovaně napíšou
+            # `var x := <výraz z neotypovaného uzlu>` a Godot ohlásí
+            # „Cannot infer the type of x" – hra se pak vůbec nenačte.
+            # Zamýšleli přitom `var x = …` (Variant). Je to bezpečná, cílená
+            # oprava podle konkrétní hlášky, ne hádání – a ušetří celý pokus.
+            python3 - <<'PY'
+          import pathlib, re, subprocess
+          log = pathlib.Path("agent.log").read_text(errors="replace")
+          jmena = sorted(set(re.findall(r'Cannot infer the type of "([A-Za-z_][A-Za-z0-9_]*)"', log)))
+          if not jmena:
+              print("typová chyba v logu není – opravovat není co")
+              raise SystemExit(0)
+          print("typová chyba u:", ", ".join(jmena))
+          zmenene = subprocess.run(["git", "diff", "--name-only"], capture_output=True,
+                                   text=True).stdout.split()
+          for f in zmenene:
+              if not f.endswith(".gd"):
+                  continue
+              p = pathlib.Path(f)
+              t = p.read_text(encoding="utf-8")
+              for j in jmena:
+                  novy, n = re.subn(rf'(?m)^(\s*var\s+{re.escape(j)})\s*:=', r'\1 =', t)
+                  if n:
+                      print(f"  {f}: var {j} := -> =")
+                      t = novy
+              p.write_text(t, encoding="utf-8")
+          PY
+            if ! spust_testy; then
+              echo "::error::testy selhaly i po mechanické opravě typů"
+              exit 1
+            fi
+            echo "::notice::testy prošly po mechanické opravě typové chyby"
+          fi
+
           # Hra se musí spustit bez chyby ve skriptu. Exit kód to neřekne –
           # naměřeno: hra s chybou skončí s exit=0 (PR #9 takhle přišel o všechny
           # nepřátele a testy i CI hlásily úspěch). Kontroluje se proto výstup.
