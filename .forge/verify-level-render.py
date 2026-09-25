@@ -108,6 +108,55 @@ def auto_ignore(level_path: Path, level: dict) -> list[tuple[int, int, int, int]
     return [(int(vp[0]) - 124, int(vp[1]) - 68, 124, 68)]
 
 
+def porovnej(img, grid, cell, off_x, off_y, want, palety, ignorovat, marker_cells,
+             wrong_limit: int = 8):
+    """Projde políčka mapy a spočítá, kolik jich sedí s dlaždicemi na snímku.
+
+    Vrací (ok, total, entities, overlays, outside, wrong). Vytáhl jsem to do
+    funkce kvůli hledání posunutí: hra umí **třes obrazovky**, který celou mapu
+    posune o pár pixelů – bez hledání zarovnání by kontrola hlásila chybu
+    i na správně vykreslené mapě.
+    """
+    ok = 0
+    total = 0
+    entities = 0
+    overlays = 0
+    outside = 0
+    wrong: list[str] = []
+    for y, row in enumerate(grid):
+        for x, znak in enumerate(row):
+            px = int(off_x + x * cell + cell / 2)
+            py = int(off_y + y * cell + cell / 2)
+            if px < 0 or py < 0 or px >= img.width or py >= img.height:
+                outside += 1
+                continue
+            # Oblasti, které dlaždice legitimně překrývají (miniatura mapy, HUD)
+            if any(rx <= px < rx + rw and ry <= py < ry + rh
+                   for rx, ry, rw, rh in ignorovat):
+                overlays += 1
+                continue
+            total += 1
+            rgb = img.getpixel((px, py))
+            seen, dist = nearest_palette(rgb, palety)
+            expected = want.get(znak, "?")
+            if seen == expected:
+                ok += 1
+                continue
+            # Je to entita? (kreslí se nad dlaždicí, takže ji překryje)
+            entity = min(ENTITY_COLORS.items(),
+                         key=lambda kv: sum((a - b) ** 2 for a, b in zip(rgb, kv[1])))
+            entity_d = sum((a - b) ** 2 for a, b in zip(rgb, entity[1])) ** 0.5
+            if entity_d <= 60.0:
+                entities += 1
+                if (x, y) not in marker_cells and len(wrong) < wrong_limit:
+                    wrong.append(f"({x},{y}) {entity[0]} mimo značku mapy")
+                continue
+            if len(wrong) < wrong_limit:
+                wrong.append(f"({x},{y}) čekáno {expected}, vidím {seen} "
+                             f"vzdálenost {dist:.0f}px")
+    return ok, total, entities, overlays, outside, wrong
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("shot")
@@ -120,6 +169,9 @@ def main() -> int:
                     metavar="X,Y,W,H",
                     help="oblast, která se nepočítá (např. miniatura mapy v rohu); "
                          "lze zadat vícekrát")
+    ap.add_argument("--max-shift", type=int, default=8,
+                    help="o kolik pixelů se smí mapa posunout (třes obrazovky); "
+                         "0 = nehledat zarovnání")
     args = ap.parse_args()
 
     ignorovat: list[tuple[int, int, int, int]] = []
@@ -170,42 +222,29 @@ def main() -> int:
         for dy in (-1, 0, 1):
             for dx in (-1, 0, 1):
                 marker_cells.add((mx + dx, my + dy))
-    for y, row in enumerate(grid):
-        for x, znak in enumerate(row):
-            px = int(off_x + x * cell + cell / 2)
-            py = int(off_y + y * cell + cell / 2)
-            if px < 0 or py < 0 or px >= img.width or py >= img.height:
-                outside += 1
-                continue
-            # Oblasti, které dlaždice legitimně překrývají (miniatura mapy, HUD)
-            if any(rx <= px < rx + rw and ry <= py < ry + rh
-                   for rx, ry, rw, rh in ignorovat):
-                overlays += 1
-                continue
-            total += 1
-            rgb = img.getpixel((px, py))
-            seen, dist = nearest_palette(rgb, palety)
-            expected = want.get(znak, "?")
-            if seen == expected:
-                ok += 1
-                continue
-            # Je to entita? (kreslí se nad dlaždicí, takže ji překryje)
-            entity = min(ENTITY_COLORS.items(),
-                         key=lambda kv: sum((a - b) ** 2 for a, b in zip(rgb, kv[1])))
-            entity_d = sum((a - b) ** 2 for a, b in zip(rgb, entity[1])) ** 0.5
-            if entity_d <= 60.0:
-                entities += 1
-                if (x, y) not in marker_cells:
-                    wrong.append(f"({x},{y}) {entity[0]} mimo značku mapy")
-                continue
-            if len(wrong) < 8:
-                wrong.append(f"({x},{y}) čekáno {expected}, vidím {seen} "
-                             f"vzdálenost {dist:.0f}px")
+
+    # Hledání zarovnání: třes obrazovky posune mapu, takže se zkusí okolní
+    # posuny a bere se ten nejlepší. Bez toho by kontrola hlásila chybu na
+    # správné mapě (naměřeno u funkce „Třes obrazovky při zásahu").
+    nejlepsi = None
+    for dx in range(-args.max_shift, args.max_shift + 1):
+        for dy in range(-args.max_shift, args.max_shift + 1):
+            v = porovnej(img, grid, cell, off_x + dx, off_y + dy, want, palety,
+                         ignorovat, marker_cells)
+            ter = v[1] - v[2]
+            podil = v[0] / ter if ter else 0.0
+            if nejlepsi is None or podil > nejlepsi[0]:
+                nejlepsi = (podil, dx, dy, v)
+    podil, ddx, ddy, v = nejlepsi
+    ok, total, entities, overlays, outside, wrong = v
+    if (ddx, ddy) != (0, 0):
+        print(f"Mapa je na snímku posunutá o ({ddx},{ddy}) px (třes obrazovky?) "
+              f"– porovnává se s tímto zarovnáním")
 
     terrain = total - entities
     ratio = ok / terrain if terrain else 0.0
     print(f"Snímek {img.width}×{img.height}, úroveň {len(grid[0])}×{len(grid)} "
-          f"po {cell}px, offset {[off_x, off_y]}")
+          f"po {cell}px, offset {[off_x + ddx, off_y + ddy]}")
     print(f"Terén sedí {ok}/{terrain} políček = {ratio * 100:.1f}% "
           f"(překrytých entitami: {entities}, ignorovaných oblastí: {overlays}, "
           f"mimo snímek: {outside})")
