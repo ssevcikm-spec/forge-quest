@@ -374,6 +374,9 @@ func _make_coin(index: int, pos: Vector2) -> Area2D:
 
 
 func _on_coin_touched(other: Area2D, coin: Area2D) -> void:
+	if player:
+		player.bonus_rychlost += 120.0
+		player.bonus_rychlost = clamp(player.bonus_rychlost, 0.0, 400.0)
 	if other != player or not is_instance_valid(coin) or not coin.is_in_group("coin"):
 		return
 	score += 1
