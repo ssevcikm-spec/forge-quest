@@ -11,6 +11,7 @@ const SPRITE_DIR := "res://assets/sprites/"
 const SFX_DIR := "res://assets/audio/sfx/"
 const LEVEL_DIR := "res://assets/levels/"
 const LEVEL_NAME := "main"
+var aktualni_level_index: int = 0
 
 var score := 0
 var coin_total := COIN_COUNT
@@ -139,7 +140,7 @@ func _update_hud() -> void:
 # ----------------------------------------------------------------- assety ----
 func _texture(rel: String) -> Texture2D:
 	"""Načte texturu z res://assets/<rel>.png (např. "sprites/player", "tiles/grass")."""
-	var path := "res://assets/%s.png" % rel
+	var path = "res://assets/%s.png" % rel
 	if ResourceLoader.exists(path):
 		return load(path)
 	return null
@@ -173,7 +174,7 @@ func _add_music() -> void:
 	"""Hudba na pozadí. Smyčku nastavujeme v kódu, protože import .wav ji sám
 	nezapne – a skladby z `forge music` jsou dělané přesně pro smyčku."""
 	for track in ["theme", "chiptune", "calm"]:
-		var path := "res://assets/audio/music/%s.wav" % track
+		var path = "res://assets/audio/music/%s.wav" % track
 		if not ResourceLoader.exists(path):
 			continue
 		var stream = load(path)
@@ -198,7 +199,8 @@ func _add_music() -> void:
 func _add_level() -> void:
 	"""Postaví mapu z assets/levels/<nazev>.json (generuje `forge level`).
 	Když úroveň v projektu není, hra se hraje na holé ploše – pořád hratelná."""
-	var path := LEVEL_DIR + LEVEL_NAME + ".json"
+	var level_files := ["main.json", "level_2.json", "level_3.json"]
+	var path = LEVEL_DIR + level_files[aktualni_level_index]
 	if not FileAccess.file_exists(path):
 		print("[game] úroveň %s není – hraju bez mapy" % path)
 		return
@@ -210,6 +212,7 @@ func _add_level() -> void:
 	node.set_script(script)
 	node.add_to_group("level")
 	if not node.load_file(path):
+		print("[game] chyba při načítání úrovně: %s" % path)
 		node.queue_free()
 		return
 	# Dlaždice kreslíme pod vším ostatním: zdi mají z_index 1 (aby zakryly spáry
@@ -219,6 +222,12 @@ func _add_level() -> void:
 	level = node
 	add_child(level)
 	level.build()
+
+	# Odstranění starých objektů
+	for coin in get_tree().get_nodes_in_group("coin"):
+		coin.queue_free()
+	for enemy in get_tree().get_nodes_in_group("enemy"):
+		enemy.queue_free()
 
 
 func _coin_spots(vp: Vector2) -> Array:
