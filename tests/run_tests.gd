@@ -431,6 +431,41 @@ func _run() -> void:
 		main._add_level()
 		await process_frame
 
+	# -------------------------------------------------- herní smyčka ----
+	# Doteď se testovaly jednotlivé funkce. Tohle je poprvé, co se ptáme na
+	# CELEK: dá se hra vůbec dohrát? Nasbírat mince → dostat se k východu →
+	# postoupit dál (nebo vyhrát). Test je záměrně shovívavý k tomu, jak je
+	# odemčení udělané: projde, když se po truhle postoupí na další úroveň,
+	# i když se rovnou vyhraje.
+	if player != null and main.get("aktualni_level_index") != null:
+		var mince_hry := get_nodes_in_group("coin")
+		var pocet_minci := mince_hry.size()
+		var skore_pred_hry: int = int(main.score)
+		var sebrano := 0
+		for c in mince_hry:
+			if is_instance_valid(c):
+				main._on_coin_touched(player, c)
+				await process_frame
+				sebrano += 1
+		# Skóre se bere jako PŘÍRŮSTEK – jeden coin už mohl sebrat dřívější test.
+		_check(sebrano > 0 and int(main.score) == skore_pred_hry + sebrano,
+			"hráč posbíral všechny mince v úrovni (%d, skóre %d → %d)"
+			% [sebrano, skore_pred_hry, main.score])
+
+		var truhly_hry := get_nodes_in_group("chest")
+		if truhly_hry.size() > 0:
+			var index_pred: int = int(main.aktualni_level_index)
+			var skore_pred: int = int(main.score)
+			main._on_chest_touched(player, truhly_hry[0])
+			await process_frame
+			var posunul: bool = int(main.aktualni_level_index) > index_pred
+			var vyhra_label = main.get_node_or_null("WinLabel")
+			var vyhral: bool = vyhra_label != null and vyhra_label.visible
+			_check(posunul or vyhral,
+				"po truhle se postoupí dál nebo se vyhraje (index %d → %d, výhra %s)"
+				% [index_pred, int(main.aktualni_level_index), str(vyhral)])
+			paused = false
+
 	_finish()
 
 

@@ -40,10 +40,8 @@ func _ready() -> void:
 	add_child(player)
 
 	var vp := get_viewport_rect().size
-	var spots := _coin_spots(vp)
-	coin_total = spots.size()
-	for i in coin_total:
-		add_child(_make_coin(i, spots[i]))
+	# Mince staví _add_level (musí se postavit znovu i po přechodu na jinou
+	# úroveň) – tady se už nedělají, jinak by jich po startu bylo dvakrát tolik.
 
 	_add_ui()
 	print("[game] připraveno: hráč + %d mincí, zvuků načteno: %d, dlaždice: %s, úroveň: %s" % [
@@ -237,6 +235,16 @@ func _add_level() -> void:
 		coin.queue_free()
 	for enemy in get_tree().get_nodes_in_group("enemy"):
 		enemy.queue_free()
+
+	# Nové mince pro novou úroveň. Bez toho zůstala úroveň po přechodu PRÁZDNÁ
+	# (staré mince se uklidily a nové nevznikly), takže se nedala dokončit –
+	# odhalil test herní smyčky („hráč posbíral všechny mince v úrovni (0, …)").
+	# Mince se stavějí z nové mapy, takže sedí na jejích značkách.
+	var vp := get_viewport_rect().size
+	var spots := _coin_spots(vp)
+	coin_total = spots.size()
+	for i in coin_total:
+		add_child(_make_coin(i, spots[i]))
 
 
 func _coin_spots(vp: Vector2) -> Array:
