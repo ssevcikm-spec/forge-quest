@@ -55,6 +55,31 @@ jobs:
             exit 1
           fi
 
+      - name: Vizuální kontrola (snímek hry vs mapa)
+        # Co testy nevidí: jestli se hra opravdu VYKRESLUJE podle mapy. Přesně
+        # tahle kontrola (jen lokálně) odhalila, že miniatura zakrývá obrazovku.
+        # Runner nemá GPU, takže se používá virtuální displej (xvfb) a softwarové
+        # OpenGL. Nejdřív krok jen reportuje (continue-on-error): dokud není
+        # ověřené, že software rendering na runneru funguje, nemá blokovat.
+        continue-on-error: true
+        timeout-minutes: 6
+        run: |
+          set -o pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 mesa-utils
+          mkdir -p /tmp/frames
+          xvfb-run -a "$FORGE_GODOT" --path . --rendering-driver opengl3 \
+            --resolution 480x270 --fixed-fps 20 \
+            --write-movie /tmp/frames/frame.png --quit-after 20 2>&1 | tail -5
+          SNIMEK=$(ls /tmp/frames/frame*.png 2>/dev/null | tail -1 || true)
+          echo "snímek: ${SNIMEK:-ZADNY}"
+          if [ -z "$SNIMEK" ]; then
+            echo "::warning::snímek se nevyrenderoval – softwarové OpenGL v runneru nefunguje"
+            exit 0
+          fi
+          python3 -m pip install --quiet pillow
+          python3 .forge/verify-level-render.py "$SNIMEK" assets/levels/main.json
+
       - name: Export buildů (Linux + Web)
         timeout-minutes: 10
         run: |
