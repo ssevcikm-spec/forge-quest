@@ -310,16 +310,23 @@ jobs:
           PR: ${{ needs.pull-request.outputs.pr_number }}
         run: |
           set -euo pipefail
+          # Zajímá nás JEN naše kontrola z ci.yml ("Testy a build"). Dřív se
+          # čekalo na celý statusCheckRollup a jakákoli cizí červená kontrola
+          # sloučení zablokovala – naměřeno u PR #21, kde repo napojila
+          # cloudflarová "Workers Builds" a ta logicky selhala (v repu hry
+          # žádný Worker není). Cizí kontroly se jen vypíšou.
           for i in $(seq 1 30); do
             roll=$(gh pr view "$PR" --json statusCheckRollup \
-                   --jq '[.statusCheckRollup[]? | (.conclusion // "PENDING")] | join(",")' || echo "")
-            echo "pokus $i: ${roll:-'(zatím žádné kontroly)'}"
-            case "$roll" in
-              *FAILURE*|*CANCELLED*|*TIMED_OUT*|*ACTION_REQUIRED*) echo "ci=bad" >> "$GITHUB_OUTPUT"; exit 0 ;;
+                   --jq '[.statusCheckRollup[]? | {n: (.name // .context // "?"), s: (.conclusion // "PENDING")}]' \
+                   || echo "[]")
+            echo "pokus $i: $roll"
+            nase=$(echo "$roll" | jq -r '[.[] | select(.n == "Testy a build")] | .[0].s // "PENDING"')
+            case "$nase" in
+              SUCCESS) echo "ci=ok" >> "$GITHUB_OUTPUT"; exit 0 ;;
+              FAILURE|CANCELLED|TIMED_OUT|ACTION_REQUIRED|STARTUP_FAILURE)
+                echo "::error::naše kontrola 'Testy a build' skončila jako $nase"
+                echo "ci=bad" >> "$GITHUB_OUTPUT"; exit 0 ;;
             esac
-            if [ -n "$roll" ] && ! echo "$roll" | grep -qE 'PENDING|SKIPPED|NEUTRAL|^,|^$'; then
-              echo "ci=ok" >> "$GITHUB_OUTPUT"; exit 0
-            fi
             sleep 20
           done
           echo "ci=timeout" >> "$GITHUB_OUTPUT"
