@@ -15,6 +15,42 @@
   ],
   "tasks": [
     {
+      "id": "level-progression-state",
+      "title": "Správa indexu úrovní",
+      "kind": "code",
+      "prompt": "V souboru `scripts/game.gd` přidej proměnnou `var aktualni_level_index: int = 0`. Uprav funkci `_add_level()` tak, aby načítala soubor podle indexu ze seznamu `[\"main.json\", \"level_2.json\", \"level_3.json\"]` uložených v `LEVEL_DIR`. Před sestavením nového levelu (`level.build()`) v této funkci zajisti odstranění starých objektů ze skupin `coin` a `enemy` pomocí `get_tree().get_nodes_in_group()`. Uprav `_ready()`, aby na začátku volala `_add_level()` místo fixního jména. Pokud `level.load_file` selže, vypiš chybu do konzole."
+    },
+    {
+      "id": "chest-unlock-logic",
+      "title": "Odemčení východu mincemi",
+      "kind": "code",
+      "prompt": "V souboru `scripts/game.gd` přidej proměnnou `var mince_v_levelu: int = 0`. Ve funkci `_add_level()` po zavolání `level.build()` nastav `mince_v_levelu` na počet uzlů ve skupině `coin`. Uprav funkci `_on_chest_touched(other, chest)`: pokud je počet nasbíraných mincí (skóre v daném levelu) menší než `mince_v_levelu`, přehraj zvuk 'denied' (pokud existuje) a funkci ukonči. Pokud je podmínka splněna, inkrementuj `aktualni_level_index`. Pokud je index menší než počet dostupných levelů (3), zavolej znovu `_add_level()`. Pokud je index na konci, zobraz `WinLabel`."
+    },
+    {
+      "id": "game-restart-logic",
+      "title": "Systém restartu hry",
+      "kind": "code",
+      "prompt": "V souboru `scripts/game.gd` vytvoř funkci `_restart_hry()`, která vynuluje `score`, `lives` na 3, `aktualni_level_index` na 0 a zavolá `_add_level()`. Skryj `WinLabel`. Uprav funkci `_input(event: InputEvent)`, aby při stisku klávesy `KEY_R` zavolala `_restart_hry()`. Tato klávesa musí fungovat, i když je hra v režimu 'game over' nebo hráč vyhrál. Zajisti, aby po restartu byla proměnná `paused` nastavena na `false` a `Engine.time_scale` na 1.0."
+    },
+    {
+      "id": "hud-level-display",
+      "title": "Zobrazení čísla úrovně",
+      "kind": "code",
+      "prompt": "V souboru `scripts/game.gd` ve funkci `_add_ui()` vytvoř nový `Label` s názvem `level_label` a přidej ho do `hud`. Umísti ho do horní části obrazovky vedle skóre. Vytvoř proměnnou ve třídě pro tento label. Ve funkci `_update_hud()` aktualizuj text tohoto labelu na formát 'LEVEL: [aktualni_level_index + 1]'. Také uprav zobrazení skóre tak, aby ukazovalo 'MINCE: [score] / [mince_v_levelu]'."
+    },
+    {
+      "id": "enemy-scaling-difficulty",
+      "title": "Zvyšování obtížnosti",
+      "kind": "code",
+      "prompt": "V souboru `scripts/game.gd` uprav funkci `_make_enemy(name: String, vp: Vector2)`. Před vrácením vytvořeného `Area2D` nepřítele mu uprav vlastnost `rychlost` (nebo `SPEED`, pokud ji má) na základě `aktualni_level_index`. Vzorec bude: `zakladni_rychlost * (1.0 + aktualni_level_index * 0.2)`. Pokud nepřítel používá skript `scripts/enemy.gd`, ujisti se, že tam tato proměnná existuje. Pokud ne, přidej do `scripts/enemy.gd` proměnnou `var rychlost_nasobic: float = 1.0` a zohledni ji v pohybu."
+    },
+    {
+      "id": "level-transition-cleanup",
+      "title": "Čištění scény při přechodu",
+      "kind": "code",
+      "prompt": "V souboru `scripts/game.gd` vytvoř pomocnou funkci `_clear_entities()`. Tato funkce projde skupiny `coin`, `enemy`, `chest` a `player` a zavolá `queue_free()` na všechny nalezené uzly. Zavolej `_clear_entities()` na začátku funkce `_add_level()` dříve, než se vytvoří nový hráč a nové entity. Tím zajistíš, že se objekty z předchozí úrovně nebudou hromadit v paměti a na mapě."
+    },
+    {
       "id": "player-momentum-base",
       "title": "Základ hybnosti hráče",
       "kind": "code",

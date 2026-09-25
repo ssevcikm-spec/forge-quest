@@ -13,6 +13,32 @@
       "markers": 5,
       "connectivity": 1.0,
       "preview": "main.preview.png"
+    },
+    {
+      "name": "level_2",
+      "file": "level_2.json",
+      "seed": 5150,
+      "cell": 16,
+      "size": [
+        30,
+        16
+      ],
+      "markers": 6,
+      "connectivity": 1.0,
+      "preview": "level_2.preview.png"
+    },
+    {
+      "name": "level_3",
+      "file": "level_3.json",
+      "seed": 9090,
+      "cell": 16,
+      "size": [
+        30,
+        16
+      ],
+      "markers": 5,
+      "connectivity": 1.0,
+      "preview": "level_3.preview.png"
     }
   ],
   "note": "mřížka je text (0=zeď, 1=místnost, 2=chodba); spawn a mince jsou středy místností, průchodnost ověřená flood fillemp"
