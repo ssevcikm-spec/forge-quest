@@ -40,9 +40,39 @@ ENTITY_COLORS = {
 }
 
 
-def nearest_palette(rgb: tuple[int, int, int]) -> tuple[str, float]:
+def palettes_from_tiles(tile_dir: Path, jmena, max_colors: int = 8) -> dict:
+    """Odvodí paletu každé dlaždice z jejího obrázku.
+
+    PROČ: dřív byly barvy dlaždic zapsané natvrdo v tomhle souboru. To fungovalo,
+    dokud existovala jediná sada (kámen/cihla/hlína), ale katalog dílů znamená
+    různé sady – a s jinými barvami by kontrola hlásila, že se mapa vykreslila
+    špatně, i když by byla v pořádku. Paleta se proto čte z PNG: vezme se
+    nejčastějších N barev (průhledné pixely se ignorují).
+    """
+    from collections import Counter
+
+    out: dict = {}
+    for jmeno in jmena:
+        cesta = tile_dir / f"{jmeno}.png"
+        if not cesta.is_file():
+            continue
+        img = Image.open(cesta).convert("RGBA")
+        pocty: Counter = Counter()
+        for px in img.getdata():
+            if px[3] < 200:      # průhledné pozadí do palety nepatří
+                continue
+            pocty[px[:3]] += 1
+        barvy = [c for c, _ in pocty.most_common(max_colors)]
+        if barvy:
+            out[jmeno] = barvy
+    return out
+
+
+def nearest_palette(rgb: tuple[int, int, int],
+                    palety: dict | None = None) -> tuple[str, float]:
+    zdroj = palety if palety else PALETTES
     best, best_d = "?", 1e9
-    for name, colors in PALETTES.items():
+    for name, colors in zdroj.items():
         for c in colors:
             d = sum((a - b) ** 2 for a, b in zip(rgb, c)) ** 0.5
             if d < best_d:
@@ -113,6 +143,17 @@ def main() -> int:
     cell = int(level["cell"])
     off_x, off_y = level.get("offset", [0, 0])
     want = {k: v for k, v in level["tiles"].items()}  # "0" -> brick, "1" -> stone, "2" -> dirt
+    # Palety dlaždic se čtou z obrázků projektu – díky tomu kontrola funguje
+    # s jakoukoli sadou z katalogu dílů, ne jen s tou, která byla dřív natvrdo.
+    tile_dir = level_path.parent.parent / "tiles"
+    if not tile_dir.is_dir():
+        tile_dir = level_path.parent / "tiles"
+    palety = palettes_from_tiles(tile_dir, sorted(set(want.values())))
+    if palety:
+        print(f"Palety dlaždic načteny z {tile_dir.as_posix()}: {', '.join(sorted(palety))}")
+    else:
+        print("Palety dlaždic se nenačetly – používám vestavěné (starší sady)")
+        palety = None
 
     ok = 0
     total = 0
@@ -143,7 +184,7 @@ def main() -> int:
                 continue
             total += 1
             rgb = img.getpixel((px, py))
-            seen, dist = nearest_palette(rgb)
+            seen, dist = nearest_palette(rgb, palety)
             expected = want.get(znak, "?")
             if seen == expected:
                 ok += 1
