@@ -11,6 +11,7 @@ const SPEED := 130.0
 
 var velocity := Vector2.ZERO
 var level: Node2D
+var dotyk_smer: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
@@ -27,6 +28,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	var dir := Vector2.ZERO
+	dir += dotyk_smer
 	if Input.is_key_pressed(KEY_LEFT) or Input.is_key_pressed(KEY_A):
 		dir.x -= 1.0
 	if Input.is_key_pressed(KEY_RIGHT) or Input.is_key_pressed(KEY_D):

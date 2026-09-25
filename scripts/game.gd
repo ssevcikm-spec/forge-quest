@@ -48,6 +48,51 @@ func _ready() -> void:
 		"%s %d×%d" % [level.level_name, level.width, level.height] if level else "ne"])
 
 	# Přidání nepřátel
+	var touch_controls := Node2D.new()
+	touch_controls.name = "TouchControls"
+	touch_controls.z_index = 20
+	add_child(touch_controls)
+
+	var touch_left := Button.new()
+	touch_left.name = "TouchLeft"
+	touch_left.text = "<"
+	touch_left.size = Vector2(44, 44)
+	touch_left.modulate = Color(1, 1, 1, 0.35)
+	touch_controls.add_child(touch_left)
+	touch_left.position = Vector2(8, 200)
+
+	var touch_right := Button.new()
+	touch_right.name = "TouchRight"
+	touch_right.text = ">"
+	touch_right.size = Vector2(44, 44)
+	touch_right.modulate = Color(1, 1, 1, 0.35)
+	touch_controls.add_child(touch_right)
+	touch_right.position = Vector2(104, 200)
+
+	var touch_up := Button.new()
+	touch_up.name = "TouchUp"
+	touch_up.text = "^"
+	touch_up.size = Vector2(44, 44)
+	touch_up.modulate = Color(1, 1, 1, 0.35)
+	touch_controls.add_child(touch_up)
+	touch_up.position = Vector2(56, 152)
+
+	var touch_down := Button.new()
+	touch_down.name = "TouchDown"
+	touch_down.text = "v"
+	touch_down.size = Vector2(44, 44)
+	touch_down.modulate = Color(1, 1, 1, 0.35)
+	touch_controls.add_child(touch_down)
+	touch_down.position = Vector2(56, 248)
+
+	touch_left.button_down.connect(_nastav_smer.bind(Vector2(-1, 0)))
+	touch_left.button_up.connect(_stop_smer)
+	touch_right.button_down.connect(_nastav_smer.bind(Vector2(1, 0)))
+	touch_right.button_up.connect(_stop_smer)
+	touch_up.button_down.connect(_nastav_smer.bind(Vector2(0, -1)))
+	touch_up.button_up.connect(_stop_smer)
+	touch_down.button_down.connect(_nastav_smer.bind(Vector2(0, 1)))
+	touch_down.button_up.connect(_stop_smer)
 	var enemy1 := _make_enemy("Enemy1", vp)
 	add_child(enemy1)
 	var enemy2 := _make_enemy("Enemy2", vp)
@@ -363,6 +408,12 @@ func _update_minimap_dot() -> void:
 		return
 	var vp: Vector2 = get_viewport_rect().size
 	dot.position = Vector2(player.position.x / vp.x * 120.0, player.position.y / vp.y * 64.0)
+
+func _nastav_smer(smer: Vector2) -> void:
+	player.dotyk_smer = smer
+
+func _stop_smer() -> void:
+	player.dotyk_smer = Vector2.ZERO
 
 func _process(delta: float) -> void:
 	cas_hry += delta
