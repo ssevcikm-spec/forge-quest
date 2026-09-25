@@ -542,6 +542,14 @@ func _on_enemy_touched(other: Area2D, enemy: Area2D) -> void:
 			game_over_label.visible = true
 		get_tree().paused = true
 
+func _on_enemy_stomped(enemy: Area2D) -> void:
+	if not is_instance_valid(enemy) or not enemy.is_in_group("enemy"):
+		return
+	play_sfx("stomp")
+	enemy.is_dead = true
+	enemy.remove_from_group("enemy")
+	enemy.queue_free()
+
 
 func _make_chest(vp: Vector2) -> Area2D:
 	var c := Area2D.new()

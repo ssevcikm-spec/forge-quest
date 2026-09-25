@@ -13,3 +13,8 @@ extends Area2D
 
 var smer: Vector2 = Vector2.ZERO
 var rychlost_nasobic: float = 1.0
+var is_dead: bool = false
+
+func _physics_process(delta: float) -> void:
+	if is_dead:
+		return
