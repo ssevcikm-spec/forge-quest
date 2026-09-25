@@ -251,6 +251,14 @@ func _add_level() -> void:
 	for i in coin_total:
 		add_child(_make_coin(i, spots[i]))
 
+	# Hráč se musí postavit na spawn NOVÉ úrovně. Pozice se dřív nastavovala jen
+	# při vzniku hráče, takže po přechodu na další úroveň (i po restartu) zůstal
+	# tam, kde byl – klidně ve zdi. Odhalil to nový test „skok na hlavu", který
+	# hráčem pohnul; restartovací test pak hlásil „254 px od spawnu".
+	if player and level and level.has_method("cell_center"):
+		player.position = level.cell_center(level.spawn_cell.x, level.spawn_cell.y)
+		player.velocity = Vector2.ZERO
+
 
 func _coin_spots(vp: Vector2) -> Array:
 	"""Mince stojí tam, kde je vyznačila mapa (středy místností – ověřeně
@@ -527,7 +535,20 @@ func _make_enemy(name: String, vp: Vector2) -> Area2D:
 
 
 func _on_enemy_touched(other: Area2D, enemy: Area2D) -> void:
-	if other != player or not is_instance_valid(enemy) or not enemy.is_in_group("enemy") or stit_trvani > 0.0:
+	if other != player or not is_instance_valid(enemy) or not enemy.is_in_group("enemy"):
+		intenzita_tresu = 1.0
+		return
+	# SKOK NA HLAVU: rozhoduje poloha a směr pohybu, ne jen dotek. Když je hráč
+	# NAD nepřítelem a neletí vzhůru, nepřítele porazí; jinak (náraz do boku)
+	# platí staré chování se ztrátou života.
+	# POZOR: tahle větev je zároveň JEDINÉ volání `_on_enemy_stomped`. V PR #32
+	# agent funkci přidal, ale nikde nezavolal, takže se ve hře nikdy nespustila
+	# a hráč o život přicházel pořád. Hlídá to `tools/check-wiring.py`.
+	if player.position.y < enemy.position.y - 4.0 and player.velocity.y >= -1.0:
+		_on_enemy_stomped(enemy)
+		player.position.y = maxf(8.0, player.position.y - 8.0)   # odraz po sešlápnutí
+		return
+	if stit_trvani > 0.0:
 		intenzita_tresu = 1.0
 		return
 	play_sfx("hurt")
@@ -545,8 +566,14 @@ func _on_enemy_touched(other: Area2D, enemy: Area2D) -> void:
 func _on_enemy_stomped(enemy: Area2D) -> void:
 	if not is_instance_valid(enemy) or not enemy.is_in_group("enemy"):
 		return
-	play_sfx("stomp")
-	enemy.is_dead = true
+	# Zvuk se bere z existující banky (`assets/audio/sfx/`): „stomp" v ní není
+	# a `play_sfx` u neznámého jména tiše skončí – hráč by porážku neslyšel.
+	# `hit` je nejbližší: krátký náraz.
+	play_sfx("hit")
+	# Nepřítel se rovnou uklidí ze scény (pohyb nepřátel řídí `_move_enemies`
+	# podle skupiny "enemy", takže vyřazení ze skupiny ho zastaví).
+	# Skóre se ZÁMĚRNĚ nemění: skóre jsou mince a rozhoduje o výhře, takže
+	# přičtení za nepřítele by mohlo ukončit úroveň před sebraním mincí.
 	enemy.remove_from_group("enemy")
 	enemy.queue_free()
 

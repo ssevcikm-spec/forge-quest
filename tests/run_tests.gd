@@ -339,6 +339,23 @@ func _run() -> void:
 			_check(int(main.lives) == zivoty_pred - 1,
 				"dotek nepřítele ubere život (%d -> %d)" % [zivoty_pred, int(main.lives)])
 
+		# SKOK NA HLAVU: hráč nad nepřítelem ho porazí a nepřijde o život.
+		# Test je tu proto, že PR #32 tuhle funkci přidal, ale NIKDE nezavolal –
+		# chování se tedy vůbec nezměnilo a testy (které se ptají jen na staré
+		# chování) to nemohly poznat. Hlídá to i `tools/check-wiring.py`.
+		if enemies.size() > 1:
+			var obet: Area2D = enemies[1]
+			if is_instance_valid(obet) and obet.position.y > 20.0:
+				var zivoty_pred2: int = int(main.lives)
+				player.position = obet.position + Vector2(0.0, -12.0)
+				player.velocity = Vector2(0.0, 10.0)   # padá na něj
+				main._on_enemy_touched(player, obet)
+				await process_frame
+				_check(int(main.lives) == zivoty_pred2,
+					"skok na hlavu neubírá život (%d)" % int(main.lives))
+				_check(not is_instance_valid(obet) or not obet.is_in_group("enemy"),
+					"sešlápnutý nepřítel zmizel ze scény")
+
 	if main.has_method("_save_best"):
 		var puvodni_best: int = int(main.best)
 		main.best = 12345

@@ -52,6 +52,14 @@ jobs:
           python3 -m pip install --quiet pillow
           python3 .forge/check-assets.py .
 
+      - name: Kontrola zapojení kódu (žádný mrtvý kód)
+        # Nejdražší druh chyby je „hotová funkce na papíře": PR #32 přidal
+        # `_on_enemy_stomped()`, ale nikde ji nezavolal – hráč tedy nepřítele
+        # pořád jen zabít nemohl a testy to nepoznaly (netestují, co nikdo
+        # nevolá). Tahle kontrola hlídá, že každá funkce je odněkud volaná.
+        timeout-minutes: 3
+        run: python3 .forge/check-wiring.py .
+
       - name: Hra se spustí bez chyby ve skriptu
         # Exit kód NESTAČÍ: hra s chybou ve skriptu skončí s exit=0 a chybu jen
         # vypíše (naměřeno: PR #9 takhle tiše přišel o všechny nepřátele a CI
