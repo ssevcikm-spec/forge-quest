@@ -32,5 +32,18 @@
     "height_tolerance": 0.25,
     "min_silhouette_iou": 0.6,
     "max_centroid_shift": 4.0
+  },
+  "music": {
+    "min_stepwise_ratio": 0.45,
+    "max_leap_ratio": 0.25,
+    "min_motif_share": 0.35,
+    "max_bar_patterns": 8,
+    "min_range_semitones": 4,
+    "max_range_semitones": 20,
+    "min_long_note_share": 0.3,
+    "min_motif_repetition": 0.8,
+    "max_motif_contrast": 0.4,
+    "min_energy_seam": 0.3,
+    "max_loop_score": 3.0
   }
 }

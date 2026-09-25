@@ -40,6 +40,18 @@ jobs:
         timeout-minutes: 3
         run: timeout 150 "$FORGE_GODOT" --headless --path . --script res://tests/run_tests.gd
 
+      - name: Kontrola kvality assetů (spec)
+        # Testy poznají, že hra FUNGUJE; tahle kontrola pozná, že VYPADÁ a ZNÍ
+        # podle specu (`assets/spec.json`): měřítko postav, díry v siluetě,
+        # konzistence animace – a od 25. 9. 2026 i hudba: jestli má motiv, který
+        # se vrací, nebo je to náhodná změť tónů (přesně to uživatel slyšel).
+        # Měří se i to, co se nedá „nakreslit": korelace taktů ve skutečných
+        # vzorcích vedoucího hlasu.
+        timeout-minutes: 5
+        run: |
+          python3 -m pip install --quiet pillow
+          python3 .forge/check-assets.py .
+
       - name: Hra se spustí bez chyby ve skriptu
         # Exit kód NESTAČÍ: hra s chybou ve skriptu skončí s exit=0 a chybu jen
         # vypíše (naměřeno: PR #9 takhle tiše přišel o všechny nepřátele a CI
