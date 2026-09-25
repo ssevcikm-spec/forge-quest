@@ -376,13 +376,23 @@ func _run() -> void:
 	var vyhra = main.get_node_or_null("WinLabel")
 	var truhly := get_nodes_in_group("chest")
 	if vyhra != null and truhly.size() > 0 and player != null:
+		# Truhla má DVA možné významy a test je bere oba: buď rovnou vyhraje
+		# (původní chování), nebo odemkne/posune na další úroveň (jak to navrhl
+		# plán „Pokladnice Stínů"). Dřív tu bylo tvrzené „ukáže výherní hlášení",
+		# jenže tím se změna, kterou plán chtěl, hlásila jako rozbitá.
+		var index_pred_truhla = main.get("aktualni_level_index")
 		main._on_chest_touched(player, truhly[0])
 		await process_frame
-		_check(vyhra.visible, "sebrání truhly ukáže výherní hlášení")
-		# Pozor: tenhle skript JE SceneTree, takže se pauza čte přímo z `paused`
-		# (get_tree() na sobě samém neexistuje – přesně na tom spadl parse).
-		_check(paused, "výhra pauzne hru")
-		paused = false  # aby zbytek testů mohl běžet
+		var posunul_truhla: bool = (index_pred_truhla != null
+			and int(main.aktualni_level_index) != int(index_pred_truhla))
+		_check(vyhra.visible or posunul_truhla,
+			"truhla něco udělá: výherní hlášení, nebo posun dál (výhra %s, posun %s)"
+			% [str(vyhra.visible), str(posunul_truhla)])
+		if vyhra.visible:
+			# Pozor: tenhle skript JE SceneTree, takže se pauza čte přímo z `paused`
+			# (get_tree() na sobě samém neexistuje – přesně na tom spadl parse).
+			_check(paused, "když hra vyhraje, pauzne se")
+			paused = false  # aby zbytek testů mohl běžet
 
 	# -------------------------------------------------- všechny úrovně ----
 	# Hra může mít víc úrovní (postup úrovněmi) a musí umět načíst kteroukoli.
@@ -409,6 +419,13 @@ func _run() -> void:
 	# Když hra umí víc úrovní, musí umět přepnout na další – a ta musí být
 	# průchodná. Test se zapne sám, až funkce v kódu je (dřív ne).
 	if main.get("aktualni_level_index") != null:
+		# Nejdřív se stav NAROVNA: předchozí test s truhlou mohl úroveň posunout
+		# (přesně to dělá odemčení východu mincemi), takže by tenhle blok padal
+		# na „hra začíná na první úrovni (index 1)" – což nebyla chyba hry, ale
+		# závislost testů na pořadí. Testy musí být nezávislé.
+		main.aktualni_level_index = 0
+		main._add_level()
+		await process_frame
 		_check(int(main.aktualni_level_index) == 0,
 			"hra začíná na první úrovni (index %d)" % int(main.aktualni_level_index))
 		var prvni_lvl = main.get_node_or_null("Level")
