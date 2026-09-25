@@ -31,15 +31,25 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 
-def _nacti_spec(target: Path) -> dict:
+def _nacti_spec(target: Path) -> dict | None:
+    """Spec hry; když v repu není, zkusí výchozí z pipeline (mimo ni vrátí None).
+
+    POZOR: v CI (GitHub Actions) pipeline není – dřív by `import packs` spadl na
+    ImportError a kontrola by skončila tracebackem. Hra bez `assets/spec.json`
+    je ale sama o sobě chyba: spec je součástí hry (zapisuje ho `forge pack
+    install`), takže chybějící spec = jasná zpráva, ne výjimka.
+    """
     cesta = target / "assets" / "spec.json"
     if cesta.is_file():
         return json.loads(cesta.read_text(encoding="utf-8"))
     # výchozí spec z pipeline (když hra ještě žádný nemá)
-    sys.path.insert(0, str(Path(__file__).parent.parent / "pipeline"))
-    import packs  # noqa: PLC0415
+    try:
+        sys.path.insert(0, str(Path(__file__).parent.parent / "pipeline"))
+        import packs  # noqa: PLC0415
 
-    return packs.SPEC
+        return packs.SPEC
+    except ImportError:
+        return None
 
 
 def _bbox(img: Image.Image):
@@ -158,6 +168,9 @@ def _zkontroluj_hudbu(target: Path, brany: dict) -> tuple[list[str], list[str], 
 def zkontroluj(target: Path) -> tuple[list[str], list[str], dict]:
     """Vrátí (vady, poznámky, naměřená data)."""
     spec = _nacti_spec(target)
+    if spec is None:
+        return ([f"chybí {target / 'assets' / 'spec.json'} – bez specu se vzhled "
+                 f"měřit nedá (zapisuje ho `forge pack install`)"], [], {})
     role = spec.get("role", {})
     brany = spec.get("gates", {})
     sp = target / "assets" / "sprites"
@@ -166,10 +179,14 @@ def zkontroluj(target: Path) -> tuple[list[str], list[str], dict]:
     data: dict = {"spec": spec, "sprites": {}, "animation": {}, "pomer": {}}
 
     if not sp.is_dir():
-        return [f"chybí složka {sp}"], [], data
+        # Bez spritů se přeskočí jen sprity – hudba se měřit dá a má se
+        # (u sad bez postav, např. knihovny hudby a dlaždic, je to jediná
+        # kontrolovatelná část vzhledu).
+        vady.append(f"chybí složka {sp}")
+        poznamky.append("sprity ve hře nejsou – měří se jen hudba")
 
     vysky: dict[str, int] = {}
-    for jmeno, pozadovano in role.items():
+    for jmeno, pozadovano in (role.items() if sp.is_dir() else ()):
         f = sp / f"{jmeno}.png"
         if not f.is_file():
             vady.append(f"chybí sprite {jmeno}.png (spec ho čeká)")
