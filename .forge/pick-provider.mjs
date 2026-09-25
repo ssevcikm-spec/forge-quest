@@ -5,16 +5,32 @@
 // Proč: free tiery padají na 429 a jednotlivé služby mají výpadky. Místo aby
 // agent spadl, zkusí se řetězec providerů popořadě a použije se první funkční.
 //
+// ROTACE (od 25. 9. 2026): pořadí se posouvá podle `run_key`, takže opakované
+// pokusy téže úlohy neběží pořád se stejným modelem. Naměřeno: tři pokusy
+// o úlohu #40 selhaly stejně („nochange"), protože všechny tři vybraly
+// codestral-latest. Když model na úloze selže, další pokus se stejným modelem
+// selže skoro jistě – rotace tu korelaci rozbije.
+//
 // Použití v Actions:
-//   node .forge/pick-provider.mjs
+//   node .forge/pick-provider.mjs                 # první pokus (rotace z run_key)
+//   node .forge/pick-provider.mjs --next          # další pokus v témže běhu
+//   node .forge/pick-provider.mjs --seed abc      # ruční seed (testování)
 // a dál už stačí jen $OPENAI_API_BASE, $OPENAI_API_KEY, $FORGE_MODEL.
 
 import { readFileSync, appendFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { rotateOrder, startIndex, probeOrder } from './node/provider-choice.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const config = JSON.parse(readFileSync(join(HERE, 'providers.json'), 'utf8'));
+
+const arg = (jmeno) => {
+  const i = process.argv.indexOf(jmeno);
+  return i >= 0 ? process.argv[i + 1] : '';
+};
+const chciDalsiho = process.argv.includes('--next');
+const seed = arg('--seed') || process.env.FORGE_RUN_KEY || '';
 
 async function probe(baseUrl, apiKey, model) {
   const ctrl = new AbortController();
@@ -46,8 +62,30 @@ async function probe(baseUrl, apiKey, model) {
   }
 }
 
-const chosen = [];
-for (const p of config.providers) {
+// Poslední použitý poskytovatel se čte z provider.json – díky tomu umí `--next`
+// přeskočit na dalšího i v rámci jednoho běhu (GITHUB_ENV platí až pro další krok).
+// POZOR na BOM: PowerShell (a potažmo ruční zápis v Windows) umí přidat značku
+// na začátek souboru a JSON.parse by na ní spadl – přesně to zlobilo u .env.
+let posledni = '';
+try {
+  const raw = readFileSync(join(HERE, 'provider.json'), 'utf8').replace(/^\uFEFF/, '');
+  posledni = JSON.parse(raw).provider || '';
+} catch { /* první běh – žádný záznam není */ }
+
+const order = rotateOrder(config.providers, seed);
+const start = startIndex(order, posledni, chciDalsiho);
+const poradi = probeOrder(order, start);
+if (seed) {
+  console.log(`pořadí posunuto podle run_key (${String(seed).slice(0, 8)}…): ` +
+    `${order.map((p) => p.name).join(' → ')}`);
+}
+if (chciDalsiho && posledni) {
+  console.log(`předchozí pokus: ${posledni} – hledám jiného poskytovatele`);
+}
+console.log(`zkouším v pořadí: ${poradi.map((p) => p.name).join(' → ')}`);
+
+let chosen = null;
+for (const p of poradi) {
   const apiKey = process.env[p.keyEnv];
   if (!apiKey) {
     console.log(`- ${p.name}: přeskočeno (chybí ${p.keyEnv})`);
@@ -57,32 +95,38 @@ for (const p of config.providers) {
     const r = await probe(p.baseUrl, apiKey, model);
     if (r.ok) {
       console.log(`✓ ${p.name} / ${model} odpovídá – použiji tento model`);
-      chosen.push({ provider: p.name, baseUrl: p.baseUrl, model, keyEnv: p.keyEnv, apiKey });
+      chosen = { provider: p.name, baseUrl: p.baseUrl, model, keyEnv: p.keyEnv, apiKey };
       break;
     }
     console.log(`✗ ${p.name} / ${model}: ${r.reason}`);
   }
-  if (chosen.length) break;
+  if (chosen) break;
 }
 
-if (!chosen.length) {
+if (!chosen) {
   console.error('CHYBA: žádný z bezplatných poskytovatelů neodpověděl.');
   console.error('Zkontroluj, že jsou v GitHub Secrets GEMINI_API_KEY / GROQ_API_KEY / OPENROUTER_API_KEY.');
   process.exit(1);
 }
 
-const c = chosen[0];
 const envFile = process.env.GITHUB_ENV;
 const lines = [
-  `OPENAI_API_BASE=${c.baseUrl}`,
-  `OPENAI_API_KEY=${c.apiKey}`,
-  `FORGE_MODEL=${c.model}`,
-  `FORGE_PROVIDER=${c.provider}`,
+  `OPENAI_API_BASE=${chosen.baseUrl}`,
+  `OPENAI_API_KEY=${chosen.apiKey}`,
+  `FORGE_MODEL=${chosen.model}`,
+  `FORGE_PROVIDER=${chosen.provider}`,
 ];
 if (envFile) appendFileSync(envFile, lines.join('\n') + '\n');
+
+// Druhá kopie pro SHELL v témže kroku: GITHUB_ENV se projeví až v dalším kroku,
+// ale „druhý pokus s jiným modelem" chceme hned, ne za 15 minut.
+const shellFile = join(HERE, 'provider.env');
+writeFileSync(shellFile, lines.map((l) => `export ${l.split('=')[0]}='${l.slice(l.indexOf('=') + 1)}'`).join('\n') + '\n');
+
 writeFileSync(join(HERE, 'provider.json'), JSON.stringify({
-  provider: c.provider, base_url: c.baseUrl, model: c.model, picked_at: new Date().toISOString(),
+  provider: chosen.provider, base_url: chosen.baseUrl, model: chosen.model,
+  run_key: String(seed), start, picked_at: new Date().toISOString(),
 }, null, 2));
 
-console.log(`\nVybráno: ${c.provider} → ${c.model}`);
+console.log(`\nVybráno: ${chosen.provider} → ${chosen.model}`);
 if (!envFile) console.log('(GITHUB_ENV není nastaven – běžím mimo CI, hodnoty výše se nikam nezapsaly)');

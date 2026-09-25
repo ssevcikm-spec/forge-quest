@@ -85,25 +85,61 @@ jobs:
           CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY || vars.CEREBRAS_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY || vars.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY || vars.OPENROUTER_API_KEY }}
+          # run_key posouvá pořadí poskytovatelů: opakované pokusy téže úlohy
+          # tak neběží pořád se stejným modelem (naměřeno: tři pokusy o úlohu
+          # #40 selhaly stejně, protože všechny tři vybraly codestral-latest).
+          FORGE_RUN_KEY: ${{ inputs.run_key }}
         run: node .forge/pick-provider.mjs
       - name: Spusť agenta
         # Zadání jde do skriptu přes proměnnou, ne přes ${{ }} – jinak by se
         # text z issue mohl vložit do shellu jako kód (script injection).
         # Timeout je tu proto, že volání free LLM umí viset (poskytovatel drží
         # spojení a neodpovídá). Bez něj by se spálil celý 45minutový job.
+        #
+        # DRUHÝ POKUS V TÉMŽE BĚHU: když model nezmění ani řádek, nemá smysl
+        # čekat 15 minut na další dispatch se stejným modelem. Naměřeno u úlohy
+        # #40: model navrhl patch, ale neaplikoval ho („nochange") – a další dva
+        # pokusy dopadly stejně. Tady se hned zkusí jiný poskytovatel; job je
+        # už naklizený, takže druhý pokus stojí jen čas modelu.
         timeout-minutes: 20
         env:
           FORGE_PROMPT: ${{ inputs.prompt }}
           FORGE_TITLE: ${{ inputs.title }}
+          FORGE_RUN_KEY: ${{ inputs.run_key }}
         run: |
           set -o pipefail
-          aider \
-            --model "openai/${FORGE_MODEL}" \
-            --read CONVENTIONS.md \
-            --edit-format diff \
-            --message "$FORGE_PROMPT" \
-            --yes --no-auto-commits --no-stream --no-check-update \
-            2>&1 | tee agent.log || echo "aider skoncil s chybou"
+          nacti_poskytovatele() {
+            # GITHUB_ENV platí až pro DALŠÍ krok, proto si pick-provider.mjs
+            # píše i .forge/provider.env, který jde načíst hned tady.
+            set -a
+            . .forge/provider.env
+            set +a
+          }
+          spust_agenta() {
+            aider \
+              --model "openai/${FORGE_MODEL}" \
+              --read CONVENTIONS.md \
+              --edit-format diff \
+              --message "$FORGE_PROMPT" \
+              --yes --no-auto-commits --no-stream --no-check-update \
+              2>&1 | tee -a agent.log || echo "aider skoncil s chybou"
+          }
+          zmenil_neco() {
+            # .uid/.import generuje Godot sám a provider.env je naše – do
+            # „změnil agent něco?" nepatří (jinak by se nezměněný běh hlásil
+            # jako úspěch a do PR by šel jen náš pomocný soubor).
+            git status --porcelain \
+              | grep -Ev '\.(uid|import)$|^agent\.log$|^\.forge/provider\.(env|json)$' \
+              | grep -q .
+          }
+          spust_agenta
+          if ! zmenil_neco; then
+            echo "::notice::model nezměnil žádný kód – zkouším jiného bezplatného poskytovatele"
+            if node .forge/pick-provider.mjs --next; then
+              nacti_poskytovatele
+              spust_agenta
+            fi
+          fi
 
       - name: Testy hry (Godot headless)
         # POZOR: tenhle timeout tam musí být. Bez něj se stalo, že patch od
@@ -181,7 +217,7 @@ jobs:
           # „Změnil agent něco?" se NESMÍ ptát jen na neprázdný patch: Godot sám
           # generuje .uid/.import a náš běh mohl zanechat log, takže patch není
           # prázdný, i když agent neudělal nic (naměřeno u PR #10).
-          ZMENA=$(git diff --cached --name-only | grep -Ev '\.(uid|import)$|^smoke\.log$|^agent\.log$' | head -5)
+          ZMENA=$(git diff --cached --name-only | grep -Ev '\.(uid|import)$|^smoke\.log$|^agent\.log$|^\.forge/provider\.(env|json)$' | head -5)
           echo "skutecne zmeny: ${ZMENA:-zadne}"
           if [ "${{ steps.tests.outcome }}" != "success" ]; then
             echo "status=failed" >> "$GITHUB_OUTPUT"

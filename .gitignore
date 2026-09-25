@@ -14,6 +14,10 @@ __pycache__/
 
 # Lokální nástroje
 .forge/provider.json
+# Volba poskytovatele pro shell v témže kroku (druhý pokus agenta). Kdyby se
+# dostala do repa, `git add -A` by ji poslal do PR a běh bez změny kódu by se
+# hlásil jako úspěch.
+.forge/provider.env
 .forge/*.log
 agent.patch
 agent.log
