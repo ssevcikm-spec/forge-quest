@@ -324,6 +324,66 @@ func _run() -> void:
 				zmena += abs(sirky[i] - mince[i].scale.x)
 			_check(zmena > 0.01, "mince se otáčejí (změna šířky %.3f)" % zmena)
 
+	# -------------------------------------------- vlastnosti, ne jen uzly ----
+	# U každé funkce od agentů se testuje i CHOVÁNÍ, ne jen to, že uzel existuje.
+	# Důvod: uzel může existovat a přesto nic nedělat (u miniatury se zase
+	# nastavila jiná velikost, než jaká se požadovala).
+
+	if main.get("lives") != null:
+		_check(String(hud.text).contains("Životy"),
+			"HUD ukazuje životy: '%s'" % hud.text)
+		if enemies.size() > 0:
+			var zivoty_pred: int = int(main.lives)
+			main._on_enemy_touched(player, enemies[0])
+			await process_frame
+			_check(int(main.lives) == zivoty_pred - 1,
+				"dotek nepřítele ubere život (%d -> %d)" % [zivoty_pred, int(main.lives)])
+
+	if main.has_method("_save_best"):
+		var puvodni_best: int = int(main.best)
+		main.best = 12345
+		main._save_best()
+		var cfg := ConfigFile.new()
+		var chyba: int = cfg.load("user://best.cfg")
+		_check(chyba == OK and int(cfg.get_value("hra", "skore", -1)) == 12345,
+			"nejlepší skóre se ukládá do user://best.cfg (chyba %d)" % chyba)
+		main.best = puvodni_best
+		main._save_best()
+
+	if zdroj.contains("MinimapDot"):
+		var mini_uzel = main.get_node_or_null("Minimap")
+		var tecka = mini_uzel.get_node_or_null("MinimapDot") if mini_uzel != null else null
+		_check(tecka != null, "tečka hráče je na miniatuře mapy")
+		if tecka != null and player != null:
+			var pozice_pred: Vector2 = tecka.position
+			player.position += Vector2(40, 20)
+			await process_frame
+			await process_frame
+			_check(tecka.position != pozice_pred,
+				"tečka se posune s hráčem (%s -> %s)" % [str(pozice_pred), str(tecka.position)])
+			player.position -= Vector2(40, 20)
+
+	var hudba = main.get_node_or_null("Music")
+	if hudba != null and zdroj.contains("stream_paused"):
+		var pauza_pred: bool = hudba.stream_paused
+		var klavesa := InputEventKey.new()
+		klavesa.keycode = KEY_M
+		klavesa.pressed = true
+		main._input(klavesa)
+		await process_frame
+		_check(hudba.stream_paused != pauza_pred, "klávesa M vypne/zapne hudbu")
+
+	var vyhra = main.get_node_or_null("WinLabel")
+	var truhly := get_nodes_in_group("chest")
+	if vyhra != null and truhly.size() > 0 and player != null:
+		main._on_chest_touched(player, truhly[0])
+		await process_frame
+		_check(vyhra.visible, "sebrání truhly ukáže výherní hlášení")
+		# Pozor: tenhle skript JE SceneTree, takže se pauza čte přímo z `paused`
+		# (get_tree() na sobě samém neexistuje – přesně na tom spadl parse).
+		_check(paused, "výhra pauzne hru")
+		paused = false  # aby zbytek testů mohl běžet
+
 	_finish()
 
 

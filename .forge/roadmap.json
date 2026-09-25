@@ -97,6 +97,30 @@
       "title": "Východ z úrovně ukončí hru (druhý pokus)",
       "kind": "code",
       "prompt": "V souboru scripts/game.gd přidej výhru: v _ready vytvoř Label s názvem WinLabel, textem 'VYHRÁL JSI!', barvou Color(1.0, 0.9, 0.3) a nastav mu visible = false (umísti ho doprostřed obrazovky, stejně jako je udělaný PauseLabel). Ve funkci _on_chest_touched po přehrání zvuku 'powerup' nastav WinLabel.visible = true a get_tree().paused = true. Nic dalšího v projektu neměň a nic nemaž."
+    },
+    {
+      "id": "hit-flash2",
+      "title": "Hráč blikne při zásahu",
+      "kind": "code",
+      "prompt": "V souboru scripts/player.gd přidej veřejnou metodu flash() -> void, která hráče na 0,2 sekundy obarví červeně a pak vrátí bílou. Udělej to takto: modulate = Color(1.0, 0.3, 0.3) a potom await get_tree().create_timer(0.2).timeout a modulate = Color(1, 1, 1, 1). Metodu označ jako async tím, že použiješ await. V souboru scripts/game.gd pak ve funkci _on_enemy_touched (po ubraní života) zavolej player.flash() jen když player != null a player.has_method('flash'). Nic dalšího neměň a nic nemaž."
+    },
+    {
+      "id": "game-over",
+      "title": "Konec hry po ztrátě životů",
+      "kind": "code",
+      "prompt": "V souboru scripts/game.gd přidej obrazovku konce hry. Udělej to takto: (1) v _ready vytvoř Label s názvem GameOverLabel, textem 'KONEC HRY' a barvou Color(1.0, 0.35, 0.35), umísti ho doprostřed obrazovky (stejně jako WinLabel) a nastav visible = false; (2) ve funkci _on_enemy_touched, v místě kde se kontroluje lives <= 0, nastav GameOverLabel.visible = true (uzel si najdi přes get_node_or_null('GameOverLabel') a když je null, nic nedělej). Nic dalšího neměň a nic nemaž."
+    },
+    {
+      "id": "enemy-respawn",
+      "title": "Nepřátelé se po chvíli obnoví",
+      "kind": "code",
+      "prompt": "V souboru scripts/game.gd přidej obnovování nepřátel, aby hra nezůstala bez nich. Udělej to takto: (1) přidej proměnnou var cas_do_obnovy: float = 0.0; (2) v _process k ní přičti delta a když je větší než 6.0, nastav ji na 0.0 a když je get_tree().get_nodes_in_group('enemy').size() menší než 2, vytvoř nového nepřítele funkcí _make_enemy (název 'Enemy' + str(Time.get_ticks_msec())) a přidej ho přes add_child; (3) nic jiného neměň. Pozor: proměnné z uzlů bez typu deklaruj s výslovným typem (například 'var cil: Vector2 = ...'), nikdy nepoužívej ':=' u hodnot z get_nodes_in_group."
+    },
+    {
+      "id": "touch-controls",
+      "title": "Ovládání dotykem pro web a telefon",
+      "kind": "code",
+      "prompt": "Přidej ovládání dotykem pro web a telefon. Udělej to ve DVOU souborech. (A) V scripts/player.gd: přidej proměnnou var dotyk_smer: Vector2 = Vector2.ZERO a ve funkci _physics_process hned za řádek s 'var dir := Vector2.ZERO' přidej řádek 'dir += dotyk_smer' – pohyb tak projde stejnou kontrolou zdí jako klávesnice. (B) V scripts/game.gd: (1) v _ready vytvoř Node2D s názvem TouchControls, přidej ho přes add_child a nastav mu z_index = 20; (2) vytvoř čtyři Buttony s názvy TouchLeft, TouchRight, TouchUp, TouchDown a texty '<', '>', '^', 'v'; každému nastav size = Vector2(44, 44) a modulate = Color(1, 1, 1, 0.35); polohy nastav až PO add_child (u Buttonu se velikost před vložením do stromu zahazuje): TouchLeft Vector2(8, 200), TouchRight Vector2(104, 200), TouchUp Vector2(56, 152), TouchDown Vector2(56, 248); (3) přidej funkci _nastav_smer(smer: Vector2) -> void, která nastaví player.dotyk_smer = smer, a funkci _stop_smer() -> void, která nastaví player.dotyk_smer = Vector2.ZERO; signálem button_down připoj u každého tlačítka _nastav_smer se správným směrem (Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)) a signálem button_up funkci _stop_smer. Nic dalšího v projektu neměň a nic nemaž. Tlačítka nesmí být přes celou obrazovku – velikost 44x44 a pozice podle seznamu výše."
     }
   ]
 }
