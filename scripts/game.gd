@@ -21,6 +21,7 @@ var lives: int = 3
 var player: Area2D
 var level: Node2D
 var hud: Label
+var level_label: Label
 var sfx := {}
 var cas_hry: float = 0.0
 var cas_do_obnovy: float = 0.0
@@ -133,7 +134,9 @@ func _ready() -> void:
 
 func _update_hud() -> void:
 	if hud:
-		hud.text = "Skóre: %d / %d (nejlepší: %d)   Životy: %d" % [score, coin_total, best, lives]
+		hud.text = "MINCE: %d / %d (nejlepší: %d)   Životy: %d" % [score, mince_v_levelu, best, lives]
+	if level_label:
+		level_label.text = "LEVEL: %d" % (aktualni_level_index + 1)
 
 
 # ----------------------------------------------------------------- assety ----
@@ -281,6 +284,12 @@ func _add_ui() -> void:
 	hud.name = "Hud"
 	hud.position = Vector2(10, 8)
 	add_child(hud)
+
+	level_label = Label.new()
+	level_label.name = "LevelLabel"
+	level_label.position = Vector2(10, 30)
+	add_child(level_label)
+
 	_update_hud()
 
 	pause_label = Label.new()
