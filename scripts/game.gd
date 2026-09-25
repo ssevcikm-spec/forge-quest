@@ -430,6 +430,8 @@ func _input(event: InputEvent) -> void:
 		var music := get_node_or_null('Music')
 		if music:
 			music.stream_paused = not music.stream_paused
+	elif event is InputEventKey and event.keycode == KEY_R and event.pressed:
+		_restart_hry()
 
 
 func _update_minimap_dot() -> void:
@@ -566,6 +568,20 @@ func _on_chest_touched(other: Area2D, chest: Area2D) -> void:
 	stit_trvani = 6.0
 	chest.remove_from_group("chest")
 	chest.queue_free()
+func _restart_hry() -> void:
+	score = 0
+	lives = 3
+	aktualni_level_index = 0
+	paused = false
+	Engine.time_scale = 1.0
+	get_tree().paused = false
+	var win_label := get_node_or_null('WinLabel')
+	if win_label:
+		win_label.visible = false
+	var game_over_label := get_node_or_null('GameOverLabel')
+	if game_over_label:
+		game_over_label.visible = false
+	_add_level()
 
 
 func _move_enemies(delta: float) -> void:
