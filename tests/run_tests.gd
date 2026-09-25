@@ -483,6 +483,34 @@ func _run() -> void:
 				% [index_pred, int(main.aktualni_level_index), str(vyhral)])
 			paused = false
 
+	# -------------------------------------------------- restart hry ----
+	# Restart musí uvést hru do STARTU, ne jen schovat hlášení: skóre na nulu,
+	# plné životy, první úroveň, hráč na spawnu – a hlavně se to musí projevit
+	# v HUD (jinak obrazovka dál ukazuje staré skóre).
+	if main.has_method("_restart_hry"):
+		main.score = 7
+		main.lives = 1
+		if main.get("aktualni_level_index") != null:
+			main.aktualni_level_index = 1
+			main._add_level()
+			await process_frame
+		main._restart_hry()
+		await process_frame
+		_check(int(main.score) == 0, "restart vynuluje skóre (%d)" % int(main.score))
+		_check(int(main.lives) == 3, "restart vrátí tři životy (%d)" % int(main.lives))
+		if main.get("aktualni_level_index") != null:
+			_check(int(main.aktualni_level_index) == 0,
+				"restart vrátí na první úroveň (index %d)" % int(main.aktualni_level_index))
+		if hud != null:
+			_check(String(hud.text).contains("0 /"),
+				"HUD po restartu ukazuje nulu: '%s'" % hud.text)
+		var lvl_po = main.get_node_or_null("Level")
+		if lvl_po != null and player != null:
+			var spawn_bod: Vector2 = lvl_po.cell_center(lvl_po.spawn_cell.x, lvl_po.spawn_cell.y)
+			_check(player.position.distance_to(spawn_bod) < 24.0,
+				"hráč je po restartu na spawnu (%.0f px od něj)"
+				% player.position.distance_to(spawn_bod))
+
 	_finish()
 
 

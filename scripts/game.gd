@@ -582,6 +582,9 @@ func _restart_hry() -> void:
 	if game_over_label:
 		game_over_label.visible = false
 	_add_level()
+	# HUD se musí přepsat taky: bez toho obrazovka po restartu dál ukazuje staré
+	# skóre a životy (naměřeno: „Skóre: 5 / 4 … Životy: 2" místo nuly a tří).
+	_update_hud()
 
 
 func _move_enemies(delta: float) -> void:
