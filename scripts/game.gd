@@ -23,6 +23,7 @@ var sfx := {}
 var cas_hry: float = 0.0
 var cas_do_obnovy: float = 0.0
 var stit_trvani: float = 0.0
+var intenzita_tresu: float = 0.0
 var paused := false
 var pause_label: Label
 var fps_label: Label
@@ -432,8 +433,13 @@ func _process(delta: float) -> void:
 	_spin_coins(cas_hry)
 	if fps_label:
 		fps_label.text = "FPS: %d" % Engine.get_frames_per_second()
+	if intenzita_tresu > 0:
+		hud.position = Vector2(randf_range(-8, 8), randf_range(-8, 8)) * intenzita_tresu
 	_move_enemies(delta)
 	_update_minimap_dot()
+	intenzita_tresu = move_toward(intenzita_tresu, 0.0, delta * 3.0)
+	if intenzita_tresu == 0.0:
+		hud.position = Vector2.ZERO
 
 
 func _safe_spot(vp: Vector2) -> Vector2:
@@ -475,6 +481,7 @@ func _make_enemy(name: String, vp: Vector2) -> Area2D:
 
 func _on_enemy_touched(other: Area2D, enemy: Area2D) -> void:
 	if other != player or not is_instance_valid(enemy) or not enemy.is_in_group("enemy") or stit_trvani > 0.0:
+		intenzita_tresu = 1.0
 		return
 	play_sfx("hurt")
 	lives -= 1
