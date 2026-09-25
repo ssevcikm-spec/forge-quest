@@ -20,11 +20,34 @@ export function fnv1a(text) {
   return h >>> 0;
 }
 
+/**
+ * Rozdělí poskytovatele na „štědré" a „skromné" (malý denní limit, např. Gemini
+ * free ~20 dotazů/den).
+ *
+ * PROČ: naměřeno v běhu #61 – rotace poslala úlohu #43 na gemini a ten vrátil
+ * 429 „exceeded your current quota" uprostřed práce; aider na tom spálil celý
+ * pokus a nezměnil ani řádek. Poskytovatel, který odpoví na „ping", ještě
+ * nemusí mít kvótu na dvacetitisícový kontext. Skromné poskytovatele proto
+ * řadíme na konec: použijí se, jen když ostatní selžou.
+ */
+export function splitScarce(items, jeSkromny = (p) => Boolean(p.skromny)) {
+  return {
+    stedre: items.filter((p) => !jeSkromny(p)),
+    skromne: items.filter((p) => jeSkromny(p)),
+  };
+}
+
 /** Posune pořadí poskytovatelů podle seedu (run_key). Bez seedu nic nemění. */
 export function rotateOrder(items, seed) {
   if (!seed || items.length < 2) return [...items];
   const offset = fnv1a(String(seed)) % items.length;
   return [...items.slice(offset), ...items.slice(0, offset)];
+}
+
+/** Pořadí pro zkoušení: rotace mezi štědrými, skromné vždy na konci. */
+export function orderProviders(items, seed) {
+  const { stedre, skromne } = splitScarce(items);
+  return [...rotateOrder(stedre, seed), ...skromne];
 }
 
 /**

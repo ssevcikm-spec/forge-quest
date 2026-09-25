@@ -40,6 +40,8 @@
       "name": "gemini",
       "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
       "keyEnv": "GEMINI_API_KEY",
+      "skromny": true,
+      "_skromny": "Malý denní limit (~20 dotazů/den). Naměřeno v běhu #61: rotace poslala úlohu na gemini, ten vrátil 429 'exceeded your current quota' a celý pokus se spálil. Proto se skromní poskytovatelé zkouší až na konci.",
       "models": [
         "gemini-3.8-flash",
         "gemini-3-flash-preview",

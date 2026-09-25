@@ -8,7 +8,7 @@
 // Použití: node .forge/node/provider-choice.test.mjs
 
 import assert from "node:assert/strict";
-import { fnv1a, rotateOrder, startIndex, probeOrder } from "./provider-choice.mjs";
+import { fnv1a, rotateOrder, startIndex, probeOrder, orderProviders } from "./provider-choice.mjs";
 
 const P = [{ name: "a" }, { name: "b" }, { name: "c" }, { name: "d" }, { name: "e" }];
 let checks = 0;
@@ -57,5 +57,29 @@ ok("pořadí zkoušení projde každého poskytovatele právě jednou");
 assert.equal(typeof fnv1a("26484181-47eb-4db5-adc7-fa8b5c457d9b"), "number");
 assert.ok(fnv1a("a") !== fnv1a("b"));
 ok("hash dává různá čísla pro různé vstupy");
+
+// 4) skromní poskytovatelé (malý denní limit) patří VŽDY na konec
+const seSkromnym = [
+  { name: "mistral" }, { name: "cerebras" },
+  { name: "gemini", skromny: true },
+  { name: "openrouter" },
+];
+for (let i = 0; i < 10; i++) {
+  const o = orderProviders(seSkromnym, `run-${i}`).map((p) => p.name);
+  assert.equal(o[o.length - 1], "gemini", `pořadí: ${o.join(",")}`);
+  assert.equal(new Set(o).size, seSkromnym.length);
+}
+ok("skromný poskytovatel (gemini) je vždy poslední, ale nikdo nezmizí");
+
+// když je skromný jen jeden, rotace probíhá mezi štědrými
+const zacinajici = new Set();
+for (let i = 0; i < 12; i++) zacinajici.add(orderProviders(seSkromnym, `x-${i}`)[0].name);
+assert.ok(zacinajici.size >= 2 && !zacinajici.has("gemini"), [...zacinajici].join(","));
+ok(`rotace začíná u štědrých poskytovatelů (${zacinajici.size} různých začátků)`);
+
+// když jsou skromní všichni, nic se neztratí
+const jenSkromne = orderProviders([{ name: "a", skromny: true }, { name: "b", skromny: true }], "s");
+assert.equal(jenSkromne.length, 2);
+ok("když jsou skromní všichni, pořadí je pořád kompletní");
 
 console.log(`\n${checks} kontrol, 0 selhání`);

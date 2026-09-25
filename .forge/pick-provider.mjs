@@ -20,7 +20,7 @@
 import { readFileSync, appendFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { rotateOrder, startIndex, probeOrder } from './node/provider-choice.mjs';
+import { orderProviders, startIndex, probeOrder } from './node/provider-choice.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const config = JSON.parse(readFileSync(join(HERE, 'providers.json'), 'utf8'));
@@ -72,7 +72,7 @@ try {
   posledni = JSON.parse(raw).provider || '';
 } catch { /* první běh – žádný záznam není */ }
 
-const order = rotateOrder(config.providers, seed);
+const order = orderProviders(config.providers, seed);
 const start = startIndex(order, posledni, chciDalsiho);
 const poradi = probeOrder(order, start);
 if (seed) {
