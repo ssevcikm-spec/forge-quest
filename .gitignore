@@ -8,6 +8,10 @@ build/
 artifacts/
 assets/_raw/
 
+# Python cache (vzniká při kontrole syntaxe)
+__pycache__/
+*.pyc
+
 # Lokální nástroje
 .forge/provider.json
 .forge/*.log
