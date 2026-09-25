@@ -12,6 +12,7 @@ const SPEED := 130.0
 var velocity := Vector2.ZERO
 var level: Node2D
 var dotyk_smer: Vector2 = Vector2.ZERO
+var bonus_rychlost: float = 0.0
 
 
 func _ready() -> void:
@@ -39,12 +40,14 @@ func _physics_process(delta: float) -> void:
 		dir.y += 1.0
 	if dir != Vector2.ZERO:
 		dir = dir.normalized()
-	velocity = dir * SPEED
+	var current_speed = SPEED + bonus_rychlost
+	velocity = dir * current_speed
 	position = _step(position + velocity * delta)
 	# drž hráče v obrazovce
 	var vp := get_viewport_rect().size
 	position.x = clampf(position.x, 8.0, vp.x - 8.0)
 	position.y = clampf(position.y, 8.0, vp.y - 8.0)
+	bonus_rychlost = lerp(bonus_rychlost, 0.0, delta * 2.5)
 
 
 func _step(target: Vector2) -> Vector2:
