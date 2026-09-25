@@ -433,6 +433,13 @@ func _process(delta: float) -> void:
 	_spin_coins(cas_hry)
 	if fps_label:
 		fps_label.text = "FPS: %d" % Engine.get_frames_per_second()
+	if stit_trvani > 0.0:
+		if stit_trvani < 1.5:
+			player.modulate = Color(0.2, 0.6, 1.0, 1.0) * (0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.02))
+		else:
+			player.modulate = Color(0.2, 0.6, 1.0, 1.0)
+	else:
+		player.modulate = Color(1, 1, 1, 1)
 	if intenzita_tresu > 0:
 		hud.position = Vector2(randf_range(-8, 8), randf_range(-8, 8)) * intenzita_tresu
 	_move_enemies(delta)
