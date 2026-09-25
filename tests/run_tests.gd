@@ -384,6 +384,27 @@ func _run() -> void:
 		_check(paused, "výhra pauzne hru")
 		paused = false  # aby zbytek testů mohl běžet
 
+	# -------------------------------------------------- všechny úrovně ----
+	# Hra může mít víc úrovní (postup úrovněmi) a musí umět načíst kteroukoli.
+	# Kontroluje se každý .json v assets/levels: jde načíst a je celý průchodný.
+	# Test se sám rozšíří, když přibude další úroveň.
+	var lvls := DirAccess.open("res://assets/levels")
+	if lvls != null:
+		var skript_levelu = load("res://scripts/level.gd")
+		if skript_levelu != null:
+			for f in lvls.get_files():
+				if not f.ends_with(".json") or f == "manifest.json":
+					continue
+				var lvl := Node2D.new()
+				lvl.set_script(skript_levelu)
+				var nacteno: bool = lvl.load_file("res://assets/levels/%s" % f)
+				_check(nacteno, "úroveň %s jde načíst" % f)
+				if nacteno:
+					_check(lvl.reachable_count() == lvl.walkable_count(),
+						"úroveň %s je celá průchodná (%d z %d)"
+						% [f, lvl.reachable_count(), lvl.walkable_count()])
+				lvl.free()
+
 	_finish()
 
 
