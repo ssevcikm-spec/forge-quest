@@ -29,6 +29,11 @@ jobs:
     name: Build a vydání
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Výstup pro job `deploy`: nasadí se jen když se Pages podařilo připravit.
+    # (Přístup k `needs.build.steps` v GitHub Actions neexistuje – musí to být
+    #  deklarovaný výstup jobu.)
+    outputs:
+      pages: ${{ steps.pages.outcome == 'success' && 'yes' || 'no' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -100,18 +105,39 @@ jobs:
           ls -la build/web | head -12
 
       - name: Nastavit Pages
+        # POZOR: založit Pages umí jen token s právy správce repa. GITHUB_TOKEN
+        # v Actions to nesmí ("Resource not accessible by integration") a jemnozrnný
+        # PAT taky ne. Proto tenhle krok není smrtelný: Release s balíčky vznikne
+        # vždy a na chybějící Pages se jen upozorní.
+        # (Zkoušel jsem i Cloudflare: Workers/Pages mají limit 25 MiB na soubor
+        #  a Godotí index.wasm má 37,7 MiB, takže web tam nasadit nelze.)
+        id: pages
+        continue-on-error: true
         uses: actions/configure-pages@v5
         with:
           enablement: true
 
       - name: Nahrát web jako artefakt Pages
+        if: steps.pages.outcome == 'success'
         uses: actions/upload-pages-artifact@v3
         with:
           path: build/web
 
+      - name: Když Pages nejdou zapnout
+        if: steps.pages.outcome != 'success'
+        run: |
+          echo "::warning::GitHub Pages nejsou zapnuté, webová verze se nenasadila."
+          echo "Zapni je jedním kliknutím: Settings → Pages → Source: GitHub Actions."
+          echo "Stažitelné balíčky (Windows/Linux/Web) jsou i tak v Release 'latest'."
+
+      - name: Označit nasazený web
+        if: steps.pages.outcome == 'success'
+        run: echo "Web se nasadí na https://ssevcikm-spec.github.io/forge-quest/"
+
   deploy:
     name: Nasazení webu
     needs: build
+    if: needs.build.outputs.pages == 'yes'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
