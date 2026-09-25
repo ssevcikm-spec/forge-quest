@@ -505,6 +505,7 @@ func _process(delta: float) -> void:
 	intenzita_tresu = move_toward(intenzita_tresu, 0.0, delta * 3.0)
 	if intenzita_tresu == 0.0:
 		hud.position = Vector2.ZERO
+	_show_win_screen()
 
 
 func _safe_spot(vp: Vector2) -> Vector2:
@@ -637,6 +638,9 @@ func _restart_hry() -> void:
 	var game_over_label := get_node_or_null('GameOverLabel')
 	if game_over_label:
 		game_over_label.visible = false
+	var win_screen := get_node_or_null('WinScreen')
+	if win_screen:
+		win_screen.queue_free()
 	_add_level()
 	# HUD se musí přepsat taky: bez toho obrazovka po restartu dál ukazuje staré
 	# skóre a životy (naměřeno: „Skóre: 5 / 4 … Životy: 2" místo nuly a tří).
@@ -672,3 +676,41 @@ func _save_best() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value('hra', 'skore', best)
 	cfg.save('user://best.cfg')
+func _show_win_screen() -> void:
+	if get_node_or_null('WinLabel') and get_node_or_null('WinLabel').visible:
+		var win_screen := Control.new()
+		win_screen.name = "WinScreen"
+		win_screen.size = get_viewport_rect().size
+		win_screen.rect_min_size = get_viewport_rect().size
+		win_screen.rect_clip_content = true
+		win_screen.mouse_filter = Control.MOUSE_FILTER_PASS
+
+		var bg := ColorRect.new()
+		bg.color = Color(0, 0, 0, 0.7)
+		bg.size = win_screen.size
+		win_screen.add_child(bg)
+
+		var title := Label.new()
+		title.text = "Vyhráno!"
+		title.position = win_screen.size / 2.0 - Vector2(0, 50)
+		title.add_theme_font_size_override("font_size", 48)
+		title.add_theme_color_override("font_color", Color(1.0, 0.9, 0.3))
+		win_screen.add_child(title)
+
+		var time_label := Label.new()
+		time_label.text = "Čas: %.2f s" % cas_hry
+		time_label.position = win_screen.size / 2.0 + Vector2(0, 20)
+		win_screen.add_child(time_label)
+
+		var score_label := Label.new()
+		score_label.text = "Skóre: %d" % score
+		score_label.position = win_screen.size / 2.0 + Vector2(0, 50)
+		win_screen.add_child(score_label)
+
+		var restart_button := Button.new()
+		restart_button.text = "Restartovat"
+		restart_button.position = win_screen.size / 2.0 + Vector2(0, 100)
+		restart_button.pressed.connect(_restart_hry)
+		win_screen.add_child(restart_button)
+
+		add_child(win_screen)
