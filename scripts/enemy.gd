@@ -12,3 +12,4 @@ extends Area2D
 ## Area2D – nic se nemusí předělávat na jiný typ uzlu.
 
 var smer: Vector2 = Vector2.ZERO
+var rychlost_nasobic: float = 1.0
