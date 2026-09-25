@@ -21,6 +21,7 @@ var level: Node2D
 var hud: Label
 var sfx := {}
 var cas_hry: float = 0.0
+var cas_do_obnovy: float = 0.0
 var paused := false
 var pause_label: Label
 var fps_label: Label
@@ -365,6 +366,13 @@ func _update_minimap_dot() -> void:
 
 func _process(delta: float) -> void:
 	cas_hry += delta
+	cas_do_obnovy += delta
+	if cas_do_obnovy > 6.0:
+		cas_do_obnovy = 0.0
+		if get_tree().get_nodes_in_group('enemy').size() < 2:
+			var vp := get_viewport_rect().size
+			var enemy := _make_enemy("Enemy" + str(Time.get_ticks_msec()), vp)
+			add_child(enemy)
 	_spin_coins(cas_hry)
 	if fps_label:
 		fps_label.text = "FPS: %d" % Engine.get_frames_per_second()
