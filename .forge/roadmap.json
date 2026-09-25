@@ -15,6 +15,12 @@
   ],
   "tasks": [
     {
+      "id": "chest-unlock2",
+      "title": "Odemčení východu mincemi (druhý pokus)",
+      "kind": "code",
+      "prompt": "V souboru `scripts/game.gd` přidej proměnnou `var mince_v_levelu: int = 0`. Ve funkci `_add_level()` po zavolání `level.build()` nastav `mince_v_levelu` na počet uzlů ve skupině `coin`. Uprav funkci `_on_chest_touched(other, chest)`: pokud je počet nasbíraných mincí (skóre v daném levelu) menší než `mince_v_levelu`, přehraj zvuk 'denied' (pokud existuje) a funkci ukonči. Pokud je podmínka splněna, inkrementuj `aktualni_level_index`. Pokud je index menší než počet dostupných levelů (3), zavolej znovu `_add_level()`. Pokud je index na konci, zobraz `WinLabel`."
+    },
+    {
       "id": "level-progression-state",
       "title": "Správa indexu úrovní",
       "kind": "code",
