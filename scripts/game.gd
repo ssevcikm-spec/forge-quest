@@ -15,6 +15,7 @@ var aktualni_level_index: int = 0
 
 var score := 0
 var coin_total := COIN_COUNT
+var mince_v_levelu: int = 0
 var best: int = 0
 var lives: int = 3
 var player: Area2D
@@ -229,6 +230,7 @@ func _add_level() -> void:
 	level = node
 	add_child(level)
 	level.build()
+	mince_v_levelu = get_tree().get_nodes_in_group("coin").size()
 
 	# Odstranění starých objektů
 	for coin in get_tree().get_nodes_in_group("coin"):
@@ -549,14 +551,21 @@ func _make_chest(vp: Vector2) -> Area2D:
 func _on_chest_touched(other: Area2D, chest: Area2D) -> void:
 	if other != player or not is_instance_valid(chest) or not chest.is_in_group("chest"):
 		return
+	if score < mince_v_levelu:
+		play_sfx("denied")
+		return
+	aktualni_level_index += 1
+	if aktualni_level_index < 3:
+		_add_level()
+	else:
+		var win_label := get_node_or_null('WinLabel')
+		if win_label:
+			win_label.visible = true
+			get_tree().paused = true
 	play_sfx("powerup")
 	stit_trvani = 6.0
 	chest.remove_from_group("chest")
 	chest.queue_free()
-	var win_label := get_node_or_null('WinLabel')
-	if win_label:
-		win_label.visible = true
-		get_tree().paused = true
 
 
 func _move_enemies(delta: float) -> void:
