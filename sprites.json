@@ -1,24 +1,31 @@
 [
   {
     "name": "player",
-    "size": 64,
-    "desc": "cyberpunk ninja, side view",
-    "seed": 2954
+    "size": 32,
+    "visual_height": 22,
+    "colors": 16,
+    "desc": "cyberpunk ninja, side view"
   },
   {
     "name": "enemy",
-    "size": 64,
+    "size": 32,
+    "visual_height": 20,
+    "colors": 16,
     "desc": "cyberpunk ninja, side view, monster variant",
-    "seed": 1977
+    "seed": 3931
   },
   {
     "name": "coin",
-    "size": 32,
+    "size": 16,
+    "visual_height": 7,
+    "colors": 8,
     "desc": "gold coin, game item"
   },
   {
     "name": "chest",
-    "size": 48,
+    "size": 24,
+    "visual_height": 13,
+    "colors": 12,
     "desc": "treasure chest, game item"
   }
 ]

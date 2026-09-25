@@ -1,49 +1,49 @@
 {
-  "generated": "2026-09-25 14:00:01",
-  "seed": 8642,
+  "generated": "2026-09-25 14:58:07",
+  "seed": 31337,
   "tile_size": 32,
   "tiles": [
     {
       "name": "grass",
       "file": "grass.png",
       "size": 32,
-      "seam": 0.16,
-      "bytes": 524
+      "seam": 0.21,
+      "bytes": 492
     },
     {
       "name": "dirt",
       "file": "dirt.png",
       "size": 32,
-      "seam": 0.1,
-      "bytes": 489
+      "seam": 0.12,
+      "bytes": 444
     },
     {
       "name": "sand",
       "file": "sand.png",
       "size": 32,
-      "seam": 0.31,
-      "bytes": 437
+      "seam": 0.23,
+      "bytes": 442
     },
     {
       "name": "stone",
       "file": "stone.png",
       "size": 32,
-      "seam": 0.69,
-      "bytes": 461
+      "seam": 0.23,
+      "bytes": 411
     },
     {
       "name": "water",
       "file": "water.png",
       "size": 32,
-      "seam": 0.13,
-      "bytes": 357
+      "seam": 0.08,
+      "bytes": 360
     },
     {
       "name": "brick",
       "file": "brick.png",
       "size": 32,
-      "seam": 0.69,
-      "bytes": 207
+      "seam": 0.54,
+      "bytes": 200
     }
   ],
   "note": "procedurální dlaždice – šev ≤ 1.6 znamená, že na sebe navazují"

@@ -1,0 +1,36 @@
+{
+  "viewport": [
+    480,
+    270
+  ],
+  "tile": 16,
+  "role": {
+    "player": {
+      "visual_height": 22,
+      "canvas": 32,
+      "colors": 16
+    },
+    "enemy": {
+      "visual_height": 20,
+      "canvas": 32,
+      "colors": 16
+    },
+    "coin": {
+      "visual_height": 7,
+      "canvas": 16,
+      "colors": 8
+    },
+    "chest": {
+      "visual_height": 13,
+      "canvas": 24,
+      "colors": 12
+    }
+  },
+  "gates": {
+    "max_border_opaque": 0.15,
+    "max_holes": 0,
+    "height_tolerance": 0.25,
+    "min_silhouette_iou": 0.6,
+    "max_centroid_shift": 4.0
+  }
+}
