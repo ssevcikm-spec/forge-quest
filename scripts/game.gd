@@ -522,6 +522,7 @@ func _make_enemy(name: String, vp: Vector2) -> Area2D:
 	e.position = _safe_spot(vp)
 	e.smer = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)).normalized()
 	e.area_entered.connect(_on_enemy_touched.bind(e))
+	e.rychlost_nasobic = 1.0 + aktualni_level_index * 0.2
 	return e
 
 
@@ -600,7 +601,7 @@ func _move_enemies(delta: float) -> void:
 	var level_node := get_tree().get_first_node_in_group("level")
 	for nepritel in get_tree().get_nodes_in_group("enemy"):
 		var m: float = 1.0 + (float(COIN_COUNT - coin_total) / COIN_COUNT) * 0.8
-		var cil: Vector2 = nepritel.position + nepritel.smer * 40.0 * m * delta
+		var cil: Vector2 = nepritel.position + nepritel.smer * 40.0 * m * nepritel.rychlost_nasobic * delta
 		var vp := get_viewport_rect().size
 		if level_node != null and level_node.has_method("is_walkable_at"):
 			if not level_node.is_walkable_at(cil):
