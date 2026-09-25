@@ -1,23 +1,23 @@
 {
-  "generated": "2026-09-24 21:51:35",
+  "generated": "2026-09-25 14:00:03",
   "levels": [
     {
       "name": "main",
       "file": "main.json",
-      "seed": 1234,
+      "seed": 9642,
       "cell": 16,
       "size": [
         30,
         16
       ],
-      "markers": 5,
+      "markers": 6,
       "connectivity": 1.0,
       "preview": "main.preview.png"
     },
     {
       "name": "level_2",
       "file": "level_2.json",
-      "seed": 5150,
+      "seed": 9719,
       "cell": 16,
       "size": [
         30,
@@ -30,7 +30,7 @@
     {
       "name": "level_3",
       "file": "level_3.json",
-      "seed": 9090,
+      "seed": 9796,
       "cell": 16,
       "size": [
         30,
