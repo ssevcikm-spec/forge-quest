@@ -136,7 +136,10 @@ func _update_hud() -> void:
 	if hud:
 		hud.text = "MINCE: %d / %d (nejlepší: %d)   Životy: %d" % [score, mince_v_levelu, best, lives]
 	if level_label:
-		level_label.text = "LEVEL: %d" % (aktualni_level_index + 1)
+		level_label.text = "LEVEL: %d / 3" % (aktualni_level_index + 1)
+	var progress_rect := get_node_or_null("ProgressRect")
+	if progress_rect:
+		progress_rect.size.x = (aktualni_level_index + 1) / 3.0 * 150.0
 
 
 # ----------------------------------------------------------------- assety ----
@@ -287,6 +290,14 @@ func _add_ui() -> void:
 		panel.size = Vector2(150, 26)
 		panel.show_behind_parent = true
 		add_child(panel)
+
+	var progress_rect := ColorRect.new()
+	progress_rect.name = "ProgressRect"
+	progress_rect.color = Color(0.35, 0.85, 1.0)
+	progress_rect.size = Vector2(0, 4)
+	progress_rect.position = Vector2(4, 30)
+	progress_rect.show_behind_parent = true
+	add_child(progress_rect)
 
 	hud = Label.new()
 	hud.name = "Hud"
