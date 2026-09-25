@@ -222,6 +222,14 @@ func _add_ui() -> void:
 	win_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.3))
 	add_child(win_label)
 
+	var game_over_label = Label.new()
+	game_over_label.name = "GameOverLabel"
+	game_over_label.text = "KONEC HRY"
+	game_over_label.position = get_viewport_rect().size / 2.0
+	game_over_label.visible = false
+	game_over_label.add_theme_color_override("font_color", Color(1.0, 0.35, 0.35))
+	add_child(game_over_label)
+
 	fps_label = Label.new()
 	fps_label.name = "Fps"
 	fps_label.position = Vector2(get_viewport_rect().size.x - 100, 8)
@@ -411,6 +419,9 @@ func _on_enemy_touched(other: Area2D, enemy: Area2D) -> void:
 	enemy.remove_from_group("enemy")
 	enemy.queue_free()
 	if lives <= 0:
+		var game_over_label := get_node_or_null('GameOverLabel')
+		if game_over_label:
+			game_over_label.visible = true
 		get_tree().paused = true
 
 
