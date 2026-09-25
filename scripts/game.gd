@@ -22,6 +22,7 @@ var hud: Label
 var sfx := {}
 var cas_hry: float = 0.0
 var cas_do_obnovy: float = 0.0
+var stit_trvani: float = 0.0
 var paused := false
 var pause_label: Label
 var fps_label: Label
@@ -421,6 +422,7 @@ func _stop_smer() -> void:
 func _process(delta: float) -> void:
 	cas_hry += delta
 	cas_do_obnovy += delta
+	stit_trvani = max(0.0, stit_trvani - delta)
 	if cas_do_obnovy > 6.0:
 		cas_do_obnovy = 0.0
 		if get_tree().get_nodes_in_group('enemy').size() < 2:
@@ -472,7 +474,7 @@ func _make_enemy(name: String, vp: Vector2) -> Area2D:
 
 
 func _on_enemy_touched(other: Area2D, enemy: Area2D) -> void:
-	if other != player or not is_instance_valid(enemy) or not enemy.is_in_group("enemy"):
+	if other != player or not is_instance_valid(enemy) or not enemy.is_in_group("enemy") or stit_trvani > 0.0:
 		return
 	play_sfx("hurt")
 	lives -= 1
@@ -508,6 +510,7 @@ func _on_chest_touched(other: Area2D, chest: Area2D) -> void:
 	if other != player or not is_instance_valid(chest) or not chest.is_in_group("chest"):
 		return
 	play_sfx("powerup")
+	stit_trvani = 6.0
 	chest.remove_from_group("chest")
 	chest.queue_free()
 	var win_label := get_node_or_null('WinLabel')
