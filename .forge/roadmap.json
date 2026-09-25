@@ -15,6 +15,30 @@
   ],
   "tasks": [
     {
+      "id": "pridat-neprijatel",
+      "title": "Nepřítel, který se dá porazit skokem",
+      "kind": "code",
+      "prompt": "V souboru scripts/game.gd: přidej výše `_make_enemy` funkci zpracovávající kolizi zhora. Když hráč skočí na nepřítele, zavolej `_on_enemy_touched` s animací a odstraň nepřítele. Přidej v `enemy.gd` proměnnou `is_dead` a zkontroluj kolizi zhora ve `_physics_process`."
+    },
+    {
+      "id": "pridat-ukazatel",
+      "title": "Ukazatel průběhu úrovně",
+      "kind": "code",
+      "prompt": "V souboru scripts/game.gd: v `_update_hud` přidej obdélník pro ukazatel průběhu (1/7) pomocí `CanvasItem` nebo `TextureRect`. Změň `_ready` tak, aby vykresloval aktuální level index a celkový počet úrovní z proměnné `aktualni_level_index`."
+    },
+    {
+      "id": "plynuly-prijit",
+      "title": "Plynulý přechod mezi úrovněmi",
+      "kind": "code",
+      "prompt": "V souboru scripts/game.gd: přidej do `_add_level` animaci zmizení a objevení mapy (např. Alpha fade). Použij `Tween` pro plynulé změny průhlednosti `level` a `hud` při změně úrovně. Ujisti se, že `_add_level` vymaže předchozí level a inicializuje nový."
+    },
+    {
+      "id": "vyherni-obrazovka",
+      "title": "Obrazovka po dokončení poslední úrovně",
+      "kind": "code",
+      "prompt": "V souboru scripts/game.gd: přidej funkci `_show_win_screen` v `_process`, která vytvoří nový `Label` nebo `TextureRect` s textem 'Vyhráno!' a zobrazením času a skóre. Změň `_restart_hry` tak, aby po kliknutí nebo dotyku přesunul hráče na první level."
+    },
+    {
       "id": "chest-unlock2",
       "title": "Odemčení východu mincemi (druhý pokus)",
       "kind": "code",

@@ -1,40 +1,41 @@
-# Pokladnice Stínů
+# Překážkový Skok
 
-> **Záměr:** Hra je hratelna, ale chybi ji cil a smycka: hrac nema duvod ji hrat znovu. Pridej postup (vice urovni / cil) a restart nebo menu. Co uz ve hre je: mapa, mince, neprately, truhla, zivoty, skore, shield, hybnost, tres obrazovky.
+> **Záměr:** Pokracuj ve vyvoji plosinovky: pridej obtiznost a cil hry - nepritel, ktereho jde porazit skokem na hlavu, ukazatel prubehu urovne, plynuly prechod mezi urovnemi a zaverecna obrazovka po dokonceni posledni urovne.
 
-**Žánr:** Akční dungeon crawler  
-**Pilíř:** Postupný průchod labyrinty se sběrem mincí pro odemčení cesty dál.
+> **Vzhled:** varianta `autumn`
+
+**Žánr:** platformer s obtížností a výzvami  
+**Pilíř:** Jedinečná mechanika porážky nepřátel skokem na hlavu a dynamická obtížnost
 
 ## Vize
 
-Hráč se ocitá v temných kobkách, kde musí v každém patře sesbírat dostatek mincí, aby se aktivovala truhla (brána) do další úrovně. Atmosféra je napínavá, nepřátelé jsou s každým patrem rychlejší a nebezpečnější. Hráč musí balancovat mezi rizikem sběru a bezpečným ústupem k východu. Cílem je projít všechny tři úrovně s co nejvyšším skóre. Po dokončení nebo smrti má hráč možnost okamžitého restartu, což podporuje opakované hraní pro překonání rekordu.
+Hráč ovládá postavu, která běží a skáče po dlaždicové mapě, zabíjí nepřátele skokem na hlavu, postupuje skrze 7 úrovní, které se stávají stále obtížnějšími, a končí výherní obrazovkou s časem a výsledkem. Hra vypadá minimalisticky s jasnou paletou a velkými spritami pro snadné vnímání. Hudba vytváří napětí během levelu a uvolnění po vítězství.
 
 ## Mechaniky
 
-- Odemknutí východu (truhly) po nasbírání určitého počtu mincí
-- Lineární postup skrze 3 úrovně se zvyšující se obtížností
-- Restartovací smyčka pomocí klávesy R po prohře či výhře
-- HUD zobrazující aktuální úroveň a zbývající mince
+- Skok na hlavu nepřátel (detekce kolize zhora)
+- Postupné zvýšování rychlosti nepřátel podle levelu
+- Ukazatel průběhu úrovně (1/7)
+- Plynulý přechod mezi úrovněmi (animace zmizení a objevení mapy)
+- Obrazovka po dokončení poslední úrovně s časem a skóre
 
 ## Jak to má vypadat
 
-- **Grafika:** Temné 2D prostředí, barevné odlišení entit (mince zlatá, hráč modrý, nepřátelé červení), velikost spritů 32x32 pixelů.
-- **Zvuk:** Tajemná hudba na pozadí, cinkavý zvuk při sběru a výrazný fanfárový zvuk při průchodu úrovní.
+- **Grafika:** Minimalistické designy s jasnou paletou (modré, žluté, černé). Sprity mají rozměry 64x64px. Nepřátelé mají jasné kontury a animace pro 'poražení'. Ukazatel průběhu je obdélníkem s červenou barvou.
+- **Zvuk:** Hudba má středně tempo s náhlými tóny při porážce nepřátel. Zvuky skoků a zásahů jsou krátce a akcentovaně. Přechod mezi úrovněmi zahrnuje zvuk 'překročení' a zvuky mapy.
 
 ## Rozsah
 
-3 úrovně definované v JSON souborech, základní nepřátelé, systém životů a skóre. Vynecháváme nákupy vylepšení a komplexní inventář.
+Do projektu se vejde 7 úrovní s nepřáteli, ukazatel průběhu, plynulý přechod mezi levely a obrazovka vítězství. Vynecháváme mnohoúrovňové výzvy, komplexní AI nepřátel a multiplayer.
 
 ## Plán prací
 
 | # | Úkol | id |
 |---|---|---|
-| 1 | Správa indexu úrovní | `level-progression-state` |
-| 2 | Odemčení východu mincemi | `chest-unlock-logic` |
-| 3 | Systém restartu hry | `game-restart-logic` |
-| 4 | Zobrazení čísla úrovně | `hud-level-display` |
-| 5 | Zvyšování obtížnosti | `enemy-scaling-difficulty` |
-| 6 | Čištění scény při přechodu | `level-transition-cleanup` |
+| 1 | Nepřítel, který se dá porazit skokem | `pridat-neprijatel` |
+| 2 | Ukazatel průběhu úrovně | `pridat-ukazatel` |
+| 3 | Plynulý přechod mezi úrovněmi | `plynuly-prijit` |
+| 4 | Obrazovka po dokončení poslední úrovně | `vyherni-obrazovka` |
 
 ---
 
