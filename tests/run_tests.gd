@@ -405,6 +405,32 @@ func _run() -> void:
 						% [f, lvl.reachable_count(), lvl.walkable_count()])
 				lvl.free()
 
+	# -------------------------------------------------- postup úrovněmi ----
+	# Když hra umí víc úrovní, musí umět přepnout na další – a ta musí být
+	# průchodná. Test se zapne sám, až funkce v kódu je (dřív ne).
+	if main.get("aktualni_level_index") != null:
+		_check(int(main.aktualni_level_index) == 0,
+			"hra začíná na první úrovni (index %d)" % int(main.aktualni_level_index))
+		var prvni_lvl = main.get_node_or_null("Level")
+		_check(prvni_lvl != null and str(prvni_lvl.source).ends_with("/main.json"),
+			"první úroveň se načetla z main.json (%s)"
+			% (prvni_lvl.source if prvni_lvl != null else "?"))
+		main.aktualni_level_index = 1
+		main._add_level()
+		await process_frame
+		var druha_lvl = main.get_node_or_null("Level")
+		_check(druha_lvl != null and str(druha_lvl.source).ends_with("/level_2.json"),
+			"po přepnutí na index 1 se načte level_2.json (%s)"
+			% (druha_lvl.source if druha_lvl != null else "?"))
+		if druha_lvl != null:
+			_check(druha_lvl.reachable_count() == druha_lvl.walkable_count(),
+				"i druhá úroveň je celá průchodná (%d z %d)"
+				% [druha_lvl.reachable_count(), druha_lvl.walkable_count()])
+		# zpět na první úroveň, aby zbytek testů pracoval s původním stavem
+		main.aktualni_level_index = 0
+		main._add_level()
+		await process_frame
+
 	_finish()
 
 

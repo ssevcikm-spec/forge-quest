@@ -207,6 +207,15 @@ func _add_level() -> void:
 	var script = load("res://scripts/level.gd")
 	if script == null:
 		return
+	# POZOR: starou úroveň je nutné odstranit DŘÍV, než se přidá nová. Když se
+	# jen přidá další uzel se stejným jménem, Godot ten nový přejmenuje a ve
+	# scéně zůstanou úrovně DVĚ (stará se pořád vykresluje). Odhalil to test
+	# „po přepnutí na index 1 se načte level_2.json" – hra sice hlásila načtení
+	# level_2, ale uzel Level pořád ukazoval na main.json.
+	var stary := get_node_or_null("Level")
+	if stary != null:
+		remove_child(stary)   # uvolní i jméno, takže nová úroveň se jmenuje "Level"
+		stary.queue_free()
 	var node := Node2D.new()
 	node.name = "Level"
 	node.set_script(script)
