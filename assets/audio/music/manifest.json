@@ -29,11 +29,11 @@
       ],
       "loop_score": 0.0,
       "energy_seam": 0.5,
-      "rms": 0.1925,
+      "rms": 0.1915,
       "bands": {
         "basy (<250 Hz)": 0.54,
-        "stredy (250–2k)": 0.367,
-        "vysky (>2k)": 0.094
+        "stredy (250–2k)": 0.356,
+        "vysky (>2k)": 0.104
       },
       "bytes": 2565862
     },
@@ -65,11 +65,11 @@
         3
       ],
       "loop_score": 0.0,
-      "energy_seam": 0.76,
-      "rms": 0.2967,
+      "energy_seam": 0.73,
+      "rms": 0.2966,
       "bands": {
         "basy (<250 Hz)": 0.569,
-        "stredy (250–2k)": 0.429,
+        "stredy (250–2k)": 0.428,
         "vysky (>2k)": 0.002
       },
       "bytes": 3681436
@@ -103,15 +103,15 @@
       ],
       "loop_score": 0.0,
       "energy_seam": 0.51,
-      "rms": 0.1908,
+      "rms": 0.1868,
       "bands": {
-        "basy (<250 Hz)": 0.663,
-        "stredy (250–2k)": 0.277,
-        "vysky (>2k)": 0.06
+        "basy (<250 Hz)": 0.664,
+        "stredy (250–2k)": 0.271,
+        "vysky (>2k)": 0.065
       },
       "bytes": 2288476
     }
   ],
-  "generated": "2026-09-24 16:25:16",
+  "generated": "2026-09-25 12:39:15",
   "note": "procedurální chiptune; loop_score ~1 znamená, že se smyčka zacyklí bez lupnutí"
 }
