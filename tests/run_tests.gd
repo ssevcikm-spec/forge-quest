@@ -334,7 +334,14 @@ func _run() -> void:
 			"HUD ukazuje životy: '%s'" % hud.text)
 		if enemies.size() > 0:
 			var zivoty_pred: int = int(main.lives)
-			main._on_enemy_touched(player, enemies[0])
+			# Pozice se nastavuje VÝSLOVNĚ: nepřátelé stojí na náhodných
+			# místech, takže bez toho test závisel na tom, jestli náhodou
+			# nevyšel hráč nad nepřítelem – a pak šlo o sešlápnutí (bez
+			# ztráty života). Naměřeno: lokálně prošel, v CI spadl.
+			var protivnik: Area2D = enemies[0]
+			player.position = protivnik.position + Vector2(0.0, 10.0)   # POD ním
+			player.velocity = Vector2(0.0, -10.0)                       # letí vzhůru
+			main._on_enemy_touched(player, protivnik)
 			await process_frame
 			_check(int(main.lives) == zivoty_pred - 1,
 				"dotek nepřítele ubere život (%d -> %d)" % [zivoty_pred, int(main.lives)])
