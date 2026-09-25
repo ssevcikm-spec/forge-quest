@@ -47,7 +47,7 @@ jobs:
   agent:
     name: Agent (free LLM)
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     outputs:
       status: ${{ steps.verdict.outputs.status }}
     steps:
@@ -101,7 +101,11 @@ jobs:
         # #40: model navrhl patch, ale neaplikoval ho („nochange") – a další dva
         # pokusy dopadly stejně. Tady se hned zkusí jiný poskytovatel; job je
         # už naklizený, takže druhý pokus stojí jen čas modelu.
-        timeout-minutes: 20
+        #
+        # TIMEOUT 30 min (bylo 20): běh #63 (úloha #44) dělal DVA pokusy s free
+        # modely a narazil na strop kroku – práce se pak ztratí, i když model
+        # třeba odpovídal. Dva pokusy se do 30 minut vejdou i s rezervou.
+        timeout-minutes: 30
         env:
           FORGE_PROMPT: ${{ inputs.prompt }}
           FORGE_TITLE: ${{ inputs.title }}
