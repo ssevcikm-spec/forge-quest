@@ -323,23 +323,36 @@ jobs:
           PR: ${{ needs.pull-request.outputs.pr_number }}
         run: |
           set -euo pipefail
-          add=$(gh pr view "$PR" --json additions --jq '.additions')
-          del=$(gh pr view "$PR" --json deletions --jq '.deletions')
-          gh pr view "$PR" --json files --jq '.files[].path' > /tmp/files.txt
-          echo "změna: +$add -$del"; sed 's/^/  /' /tmp/files.txt
+          # Velikost změny se počítá BEZ generovaných souborů. Godot si k obrázkům
+          # píše .import a ke skriptům .uid; nejsou to změny agenta, ale gate je
+          # dřív počítal do limitu 60 řádků. Naměřeno u PR #27: agent přidal
+          # 12 řádků kódu a kvůli 80 řádkům .import (které jsem zapomněl
+          # commitnout já) byl PR zamítnutý k ruční kontrole.
+          gh pr view "$PR" --json files \
+            --jq '.files[] | "\(.additions) \(.deletions) \(.path)"' > /tmp/files.txt
           ok=1
-          while read -r f; do
+          add=0
+          del=0
+          echo "soubory ve změně:"
+          while read -r a d f; do
             case "$f" in
               scripts/*|assets/*) ;;
-              *) echo "!! mimo povolené složky: $f"; ok=0 ;;
+              *) echo "  !! mimo povolené složky: $f"; ok=0 ;;
             esac
-          done < /tmp/files.txt
-          while read -r f; do
             case "$f" in
-              tests/*|.github/*|.forge/*|project.godot) echo "!! chráněný soubor: $f"; ok=0 ;;
+              tests/*|.github/*|.forge/*|project.godot) echo "  !! chráněný soubor: $f"; ok=0 ;;
             esac
+            case "$f" in
+              *.import|*.uid) echo "  (generované, do velikosti se nepočítá) $f"; continue ;;
+            esac
+            echo "  +$a/-$d  $f"
+            add=$((add + a))
+            del=$((del + d))
           done < /tmp/files.txt
-          if [ $((add + del)) -gt 60 ]; then echo "!! velká změna ($((add + del)) řádků)"; ok=0; fi
+          echo "změna (jen skutečná práce): +$add -$del"
+          if [ $((add + del)) -gt 60 ]; then
+            echo "!! velká změna ($((add + del)) řádků)"; ok=0
+          fi
           echo "ok=$ok" >> "$GITHUB_OUTPUT"
 
       - name: Počkej, až testy nezávisle potvrdí CI
