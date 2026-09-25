@@ -1,14 +1,20 @@
 {
   "_popis": [
     "Řetězec bezplatných poskytovatelů LLM pro běh v GitHub Actions.",
-    "Zkouší se popořadě; první, který odpoví, vyhrává. Klíče se berou z prostředí",
-    "(v Actions z GitHub Secrets nebo Variables). Limity se mění – ověřeno 09/2026:",
-    "  gemini     – free tier, ~20 požadavků na model a den (naměřeno!), bez karty",
-    "  poradi: mistral a cerebras odpovidaji (overeno 24. 9.), gemini ma casto 503 a jen ~20 dotazu/den",
+    "Zkouší se popořadě; první, který odpoví, vyhraje. Klíče se berou z prostředí",
+    "(v Actions z GitHub Secrets nebo Variables). Limity se mění – ověřeno 25. 9. 2026:",
+    "  gemini     – free tier, ~20 požadavků na model a den (naměřeno!), bez karty.",
+    "               POZOR: gemini-2.5-flash a gemini-2.0-flash vracely 404 („no longer",
+    "               available to new users“) – API samo doporučuje gemini-3.8-flash.",
+    "  mistral    – codestral-latest odpovídá (ověřeno 24.–25. 9.), umí dobře diff",
     "  cerebras   – gpt-oss-120b; trvalý free tier zrušen, jede z trial kreditu",
-    "  groq       – free 30 RPM/1000 RPD, ale přihlášení dělalo problémy",
-    "  openrouter – modely s příponou :free, 50 požadavků/den bez kreditů",
-    "Pořadí je záměrně takové, aby první byly ty s největší šancí odpovědět."
+    "  groq       – free 30 RPM/1000 RPD (klíč zatím v Secrets NENÍ – doplnit!)",
+    "  openrouter – 18 modelů s příponou :free (ověřeno přes /models 25. 9. 2026),",
+    "               50 požadavků/den bez kreditů, free modely bývají rate-limited",
+    "Pořadí je záměrně takové, aby první byly ty s největší šancí odpovědět.",
+    "Uvnitř poskytovatele se zkouší modely popořadě – u kódovacích modelů je větší",
+    "šance, že dodrží formát úprav: aider s diff formátem u slabších modelů skončí",
+    "na „nochange“ (model navrhne patch, ale neaplikuje ho)."
   ],
   "providers": [
     {
@@ -35,9 +41,9 @@
       "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
       "keyEnv": "GEMINI_API_KEY",
       "models": [
-        "gemini-flash-latest",
-        "gemini-2.5-flash",
-        "gemini-2.0-flash"
+        "gemini-3.8-flash",
+        "gemini-3-flash-preview",
+        "gemini-flash-latest"
       ]
     },
     {
@@ -55,11 +61,11 @@
       "baseUrl": "https://openrouter.ai/api/v1",
       "keyEnv": "OPENROUTER_API_KEY",
       "models": [
-        "qwen/qwen3.8-27b:free",
+        "poolside/laguna-s-2.1:free",
         "cohere/north-mini-code:free",
         "z-ai/glm-5.2:free",
-        "google/gemma-4-31b-it:free",
-        "nvidia/nemotron-3-super-120b-a12b:free"
+        "qwen/qwen3.8-27b:free",
+        "google/gemma-4-31b-it:free"
       ]
     }
   ]

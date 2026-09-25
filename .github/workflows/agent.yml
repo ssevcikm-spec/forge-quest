@@ -106,6 +106,16 @@ jobs:
           FORGE_PROMPT: ${{ inputs.prompt }}
           FORGE_TITLE: ${{ inputs.title }}
           FORGE_RUN_KEY: ${{ inputs.run_key }}
+          # Klíče musí být i TADY, ne jen ve kroku s výběrem poskytovatele:
+          # druhý pokus volá pick-provider.mjs znovu a bez klíčů by hlásil
+          # „přeskočeno (chybí …)" u všech poskytovatelů. Naměřeno v běhu #57:
+          # druhý pokus se kvůli tomu vůbec nespustil (a dobře že ne – guard
+          # `if node … --next` zabránil běhu s neplatným modelem).
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || vars.GEMINI_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY || vars.MISTRAL_API_KEY }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY || vars.CEREBRAS_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY || vars.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY || vars.OPENROUTER_API_KEY }}
         run: |
           set -o pipefail
           nacti_poskytovatele() {
