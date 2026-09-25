@@ -522,7 +522,8 @@ func _on_chest_touched(other: Area2D, chest: Area2D) -> void:
 func _move_enemies(delta: float) -> void:
 	var level_node := get_tree().get_first_node_in_group("level")
 	for nepritel in get_tree().get_nodes_in_group("enemy"):
-		var cil: Vector2 = nepritel.position + nepritel.smer * 40.0 * delta
+		var m: float = 1.0 + (float(COIN_COUNT - coin_total) / COIN_COUNT) * 0.8
+		var cil: Vector2 = nepritel.position + nepritel.smer * 40.0 * m * delta
 		var vp := get_viewport_rect().size
 		if level_node != null and level_node.has_method("is_walkable_at"):
 			if not level_node.is_walkable_at(cil):
