@@ -15,6 +15,42 @@
   ],
   "tasks": [
     {
+      "id": "player-momentum-base",
+      "title": "Základ hybnosti hráče",
+      "kind": "code",
+      "prompt": "V souboru `scripts/player.gd` přidej novou proměnnou `var bonus_rychlost: float = 0.0`. Ve funkci `_physics_process(delta: float)` uprav řádek vypočítávající pohyb tak, aby se k `SPEED` přičítala `bonus_rychlost` (např. `var current_speed = SPEED + bonus_rychlost`). Na konec této funkce přidej kód pro postupné snižování bonusu: `bonus_rychlost = lerp(bonus_rychlost, 0.0, delta * 2.5)`. Tím připravíš mechaniku pro krátkodobé zrychlení."
+    },
+    {
+      "id": "coin-speed-trigger",
+      "title": "Impuls ze sebrané mince",
+      "kind": "code",
+      "prompt": "V souboru `scripts/game.gd` uprav funkci `_on_coin_touched(other: Area2D, coin: Area2D)`. Na začátek funkce přidej kód, který hráči udělí rychlostní impuls: `if player: player.bonus_rychlost += 120.0`. Zároveň zajisti, aby se `player.bonus_rychlost` nepřehoupla přes limit 400.0 pomocí funkce `clamp`. Tím hráč dostane pocit flow při sbírání více mincí za sebou."
+    },
+    {
+      "id": "shield-logic-chest",
+      "title": "Mechanika štítu z truhly",
+      "kind": "code",
+      "prompt": "V souboru `scripts/game.gd` přidej novou proměnnou `var stit_trvani: float = 0.0`. Ve funkci `_process(delta: float)` tuto hodnotu snižuj: `stit_trvani = max(0.0, stit_trvani - delta)`. Uprav funkci `_on_enemy_touched(other: Area2D, enemy: Area2D)` tak, aby se stávající logika poškození (odečtení života, zvuk) provedla pouze v případě, že `stit_trvani <= 0.0`. Nakonec ve funkci `_on_chest_touched` nastav `stit_trvani = 6.0`."
+    },
+    {
+      "id": "enemy-dynamic-speed",
+      "title": "Dynamické zrychlení nepřátel",
+      "kind": "code",
+      "prompt": "V souboru `scripts/game.gd` uprav funkci `_move_enemies(delta: float)`. Uvnitř cyklu `for e in get_tree().get_nodes_in_group(\"enemy\"):` vypočítej multiplikátor rychlosti na základě zbývajících mincí: `var m: float = 1.0 + (float(COIN_COUNT - coin_total) / COIN_COUNT) * 0.8`. Uprav řádek s pohybem pozice nepřítele tak, aby se `e.smer` násobil tímto multiplikátorem `m`. Nepřátelé tak budou nebezpečnější ke konci úrovně."
+    },
+    {
+      "id": "hit-shake-effect",
+      "title": "Třes obrazovky při zásahu",
+      "kind": "code",
+      "prompt": "V souboru `scripts/game.gd` přidej proměnnou `var intenzita_tresu: float = 0.0`. Ve funkci `_on_enemy_touched` nastav `intenzita_tresu = 1.0` (pouze pokud hráč nemá aktivní štít). Ve funkci `_process(delta: float)` přidej kód: `if intenzita_tresu > 0: hud.position = Vector2(randf_range(-8, 8), randf_range(-8, 8)) * intenzita_tresu`. Na konec `_process` přidej `intenzita_tresu = move_toward(intenzita_tresu, 0.0, delta * 3.0)` a resetuj `hud.position = Vector2.ZERO` pokud je třes nulový."
+    },
+    {
+      "id": "visual-shield-feedback",
+      "title": "Vizuální indikace štítu",
+      "kind": "code",
+      "prompt": "V souboru `scripts/game.gd` uprav funkci `_process(delta: float)`. Přidej kontrolu `stit_trvani`. Pokud je `stit_trvani > 0.0`, nastav `player.modulate = Color(0.2, 0.6, 1.0, 1.0)` (neonově modrá) a pokud zbývá méně než 1.5 sekundy, nechej barvu blikat pomocí `sin(Time.get_ticks_msec() * 0.02)`. Pokud štít není aktivní, nastav `player.modulate = Color(1, 1, 1, 1)`. Tím hráč jasně pozná, kdy je v bezpečí."
+    },
+    {
       "id": "pause-space",
       "title": "Pauza mezerníkem",
       "kind": "code",
