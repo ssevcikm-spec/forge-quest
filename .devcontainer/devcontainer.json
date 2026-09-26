@@ -1,0 +1,29 @@
+{
+  // Codespace pro vývoj hry bez lokálního PC: Godot 4.7.2 headless + exportní
+  // šablony + knihovny pipeline. Nic se nenastavuje ručně – všechno dělá
+  // postCreateCommand při prvním otevření.
+  //
+  // PROČ: když je stanice vypnutá (nebo chceš něco ověřit z telefonu), dá se
+  // v Codespace spustit stejné ověření jako doma: import assetů, testy hry,
+  // kontrola kvality assetů i export buildu. Vše, co je potřeba, je veřejné
+  // (skript .forge/install-godot.sh i hra), takže free hodiny Codespaces stačí.
+  "name": "Forge Quest (Godot + pipeline)",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": ["geequlim.godot-tools", "ms-python.python"]
+    }
+  },
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "4gb"
+  },
+  "remoteEnv": {
+    "FORGE_GODOT": "/home/vscode/.cache/forge/godot/Godot_v4.7.2-stable_linux.x86_64",
+    "XDG_DATA_HOME": "/home/vscode/.cache/forge/data"
+  }
+}
