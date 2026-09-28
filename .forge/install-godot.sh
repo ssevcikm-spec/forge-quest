@@ -10,15 +10,25 @@ set -euo pipefail
 VERSION_TAG="4.7.2-stable"     # jak se jmenuje release na GitHubu
 VERSION_DIR="4.7.2.stable"     # jak se jmenuje složka šablon (s tečkou!)
 CACHE="${FORGE_CACHE:-$HOME/.cache/forge}"
-GODOT="$CACHE/godot/Godot_v${VERSION_TAG}_linux.x86_64"
+
+# Architektura: stejný skript musí fungovat na runneru (x86_64), v Codespace
+# i na domácím ARM uzlu (Oracle Ampere, telefon). Dřív byl x86_64 zadrátovaný,
+# takže na ARM uzlu by se stahovala binárka, která se vůbec nespustí.
+case "$(uname -m)" in
+  x86_64)        GODOT_ARCH="x86_64" ;;
+  aarch64|arm64) GODOT_ARCH="arm64" ;;
+  *) echo "CHYBA: neznámá architektura $(uname -m)"; exit 1 ;;
+esac
+
+GODOT="$CACHE/godot/Godot_v${VERSION_TAG}_linux.${GODOT_ARCH}"
 TPL="$CACHE/data/godot/export_templates/${VERSION_DIR}"
 BASE="https://github.com/godotengine/godot/releases/download/${VERSION_TAG}"
 
 mkdir -p "$CACHE/godot" "$TPL"
 
 if [ ! -x "$GODOT" ]; then
-  echo "Stahuji Godot ${VERSION_TAG}…"
-  curl -fsSL -o "$CACHE/godot.zip" "${BASE}/Godot_v${VERSION_TAG}_linux.x86_64.zip"
+  echo "Stahuji Godot ${VERSION_TAG} pro ${GODOT_ARCH}…"
+  curl -fsSL -o "$CACHE/godot.zip" "${BASE}/Godot_v${VERSION_TAG}_linux.${GODOT_ARCH}.zip"
   unzip -oq "$CACHE/godot.zip" -d "$CACHE/godot"
   rm -f "$CACHE/godot.zip"
   chmod +x "$GODOT"
