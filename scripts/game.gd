@@ -449,6 +449,12 @@ func _make_coin(index: int, pos: Vector2) -> Area2D:
 	circle.radius = 5.0
 	shape.shape = circle
 	c.add_child(shape)
+	var obrys := ColorRect.new()
+	obrys.color = Color(0.08, 0.08, 0.12)
+	obrys.size = Vector2(10, 10)
+	obrys.position = Vector2(-5, -5)
+	obrys.z_index = -1
+	c.add_child(obrys)
 	c.add_child(_visual("coin", Color(1.0, 0.85, 0.2), Vector2(8, 8)))
 	c.position = pos
 	c.z_index = 3
@@ -592,6 +598,12 @@ func _make_enemy(name: String, vp: Vector2, rychlost: float = 1.0) -> Area2D:
 	circle.radius = 5.0
 	shape.shape = circle
 	e.add_child(shape)
+	var obrys := ColorRect.new()
+	obrys.color = Color(0.08, 0.08, 0.12)
+	obrys.size = Vector2(12, 12)
+	obrys.position = Vector2(-6, -6)
+	obrys.z_index = -1
+	e.add_child(obrys)
 	if rychlost > 1.0:
 		e.add_child(_visual("enemy", Color(1.0, 0.45, 0.1), Vector2(9, 9)))
 	else:
@@ -658,6 +670,12 @@ func _make_chest(vp: Vector2) -> Area2D:
 	circle.radius = 5.0
 	shape.shape = circle
 	c.add_child(shape)
+	var obrys := ColorRect.new()
+	obrys.color = Color(0.08, 0.08, 0.12)
+	obrys.size = Vector2(16, 16)
+	obrys.position = Vector2(-8, -8)
+	obrys.z_index = -1
+	c.add_child(obrys)
 	c.add_child(_visual("chest", Color(0.8, 0.5, 0.2), Vector2(8, 8)))
 	# Truhla patří k východu z úrovně – když mapa existuje, stojí přesně tam.
 	var exits: Array = level.marker_positions("exit") if level else []
