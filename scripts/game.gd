@@ -321,7 +321,7 @@ func _add_ui() -> void:
 
 	pause_label = Label.new()
 	pause_label.name = "PauseLabel"
-	pause_label.text = "PAUZA"
+	pause_label.text = "PAUZA – WASD pohyb, M hudba, P pokračovat"
 	pause_label.position = get_viewport_rect().size / 2.0
 	pause_label.visible = false
 	add_child(pause_label)
@@ -473,6 +473,12 @@ func _on_coin_touched(other: Area2D, coin: Area2D) -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.keycode == KEY_SPACE and event.pressed:
+		paused = not paused
+		get_tree().paused = paused
+		pause_label.visible = paused
+	elif event is InputEventKey and event.keycode == KEY_P and event.pressed:
+		if pause_label == null:
+			return
 		paused = not paused
 		get_tree().paused = paused
 		pause_label.visible = paused
