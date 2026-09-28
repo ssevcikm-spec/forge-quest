@@ -136,6 +136,15 @@ func _ready() -> void:
 		dot.z_index = 9
 		minimap.add_child(dot)
 
+		var legend := Label.new()
+		legend.name = "MinimapLegend"
+		legend.text = "■ ty   ● mince"
+		legend.add_theme_font_size_override("font_size", 8)
+		legend.modulate = Color(0.9, 0.9, 0.9)
+		legend.position = minimap.position + Vector2(0, minimap.size.y + 2)
+		legend.z_index = 8
+		add_child(legend)
+
 
 func _update_hud() -> void:
 	if hud:
