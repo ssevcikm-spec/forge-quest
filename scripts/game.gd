@@ -262,6 +262,7 @@ func _add_level() -> void:
 	add_child(_make_shield(vp))
 	add_child(_make_heart(vp))
 	add_child(_make_potion(vp))
+	add_child(_make_enemy("EnemyFast", vp, 1.6))
 
 	# Hráč se musí postavit na spawn NOVÉ úrovně. Pozice se dřív nastavovala jen
 	# při vzniku hráče, takže po přechodu na další úroveň (i po restartu) zůstal
@@ -577,7 +578,7 @@ func _safe_spot(vp: Vector2) -> Vector2:
 	return level.cell_center(level.spawn_cell.x, level.spawn_cell.y) + Vector2(odstup, odstup)
 
 
-func _make_enemy(name: String, vp: Vector2) -> Area2D:
+func _make_enemy(name: String, vp: Vector2, rychlost: float = 1.0) -> Area2D:
 	var e := Area2D.new()
 	e.name = name
 	# Skript musí být na uzlu DŘÍV, než se nastaví 'smer': do Area2D.new() se
@@ -591,11 +592,15 @@ func _make_enemy(name: String, vp: Vector2) -> Area2D:
 	circle.radius = 5.0
 	shape.shape = circle
 	e.add_child(shape)
-	e.add_child(_visual("enemy", Color(1.0, 0.0, 0.0), Vector2(8, 8)))
+	if rychlost > 1.0:
+		e.add_child(_visual("enemy", Color(1.0, 0.45, 0.1), Vector2(9, 9)))
+	else:
+		e.add_child(_visual("enemy", Color(1.0, 0.0, 0.0), Vector2(8, 8)))
 	e.position = _safe_spot(vp)
 	e.smer = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)).normalized()
 	e.area_entered.connect(_on_enemy_touched.bind(e))
 	e.rychlost_nasobic = 1.0 + aktualni_level_index * 0.2
+	e.rychlost_nasobic *= rychlost
 	return e
 
 
