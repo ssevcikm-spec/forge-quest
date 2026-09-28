@@ -38,6 +38,7 @@ var fps_label: Label
 
 func _ready() -> void:
 	_load_best()
+	_load_progres()
 	randomize()
 	_load_sfx()
 	_add_background()
@@ -742,6 +743,7 @@ func _on_chest_touched(other: Area2D, chest: Area2D) -> void:
 		play_sfx("denied")
 		return
 	aktualni_level_index += 1
+	_save_progres()
 	if aktualni_level_index < 3:
 		_add_level()
 	else:
@@ -785,6 +787,7 @@ func _restart_hry() -> void:
 	score = 0
 	lives = 3
 	aktualni_level_index = 0
+	_save_progres()
 	paused = false
 	Engine.time_scale = 1.0
 	get_tree().paused = false
@@ -835,6 +838,22 @@ func _save_best() -> void:
 	cfg.set_value('hra', 'skore', best)
 	cfg.set_value('hra', 'cas', nejlepsi_cas)
 	cfg.save('user://best.cfg')
+
+func _load_progres() -> void:
+	var cfg := ConfigFile.new()
+	var chyba: int = cfg.load('user://progres.cfg')
+	if chyba != OK:
+		return
+	var idx := int(cfg.get_value('hra', 'uroven', 0))
+	if idx >= 0 and idx <= 2:
+		aktualni_level_index = idx
+		score = int(cfg.get_value('hra', 'skore', 0))
+
+func _save_progres() -> void:
+	var cfg := ConfigFile.new()
+	cfg.set_value('hra', 'uroven', aktualni_level_index)
+	cfg.set_value('hra', 'skore', score)
+	cfg.save('user://progres.cfg')
 func _show_win_screen() -> void:
 	if get_node_or_null('WinLabel') and get_node_or_null('WinLabel').visible:
 		var win_screen := Control.new()
