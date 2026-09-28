@@ -25,6 +25,7 @@ var level_label: Label
 var sfx := {}
 var cas_hry: float = 0.0
 var cas_do_obnovy: float = 0.0
+var cas_dalsiho_kroku: float = 0.0
 var stit_trvani: float = 0.0
 var intenzita_tresu: float = 0.0
 var paused := false
@@ -509,6 +510,10 @@ func _process(delta: float) -> void:
 	if intenzita_tresu == 0.0:
 		hud.position = Vector2.ZERO
 	_show_win_screen()
+	cas_dalsiho_kroku = max(0.0, cas_dalsiho_kroku - delta)
+	if player and player.velocity.length() > 10.0 and cas_dalsiho_kroku <= 0.0:
+		play_sfx("step")
+		cas_dalsiho_kroku = 0.32
 
 
 func _safe_spot(vp: Vector2) -> Vector2:
