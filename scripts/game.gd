@@ -253,6 +253,7 @@ func _add_level() -> void:
 	coin_total = spots.size()
 	for i in coin_total:
 		add_child(_make_coin(i, spots[i]))
+	add_child(_make_shield(vp))
 
 	# Hráč se musí postavit na spawn NOVÉ úrovně. Pozice se dřív nastavovala jen
 	# při vzniku hráče, takže po přechodu na další úroveň (i po restartu) zůstal
@@ -606,6 +607,20 @@ func _make_chest(vp: Vector2) -> Area2D:
 	c.area_entered.connect(_on_chest_touched.bind(c))
 	return c
 
+func _make_shield(vp: Vector2) -> Area2D:
+	var s := Area2D.new()
+	s.name = "Shield"
+	s.add_to_group("shield")
+	var shape := CollisionShape2D.new()
+	var circle := CircleShape2D.new()
+	circle.radius = 5.0
+	shape.shape = circle
+	s.add_child(shape)
+	s.add_child(_visual("powerup", Color(0.45, 0.85, 1.0), Vector2(9, 9)))
+	s.position = _safe_spot(vp)
+	s.area_entered.connect(_on_shield_touched.bind(s))
+	return s
+
 
 func _on_chest_touched(other: Area2D, chest: Area2D) -> void:
 	if other != player or not is_instance_valid(chest) or not chest.is_in_group("chest"):
@@ -625,6 +640,14 @@ func _on_chest_touched(other: Area2D, chest: Area2D) -> void:
 	stit_trvani = 6.0
 	chest.remove_from_group("chest")
 	chest.queue_free()
+
+func _on_shield_touched(other: Area2D, shield: Area2D) -> void:
+	if other != player or not is_instance_valid(shield):
+		return
+	play_sfx("powerup")
+	stit_trvani = 6.0
+	shield.remove_from_group("shield")
+	shield.queue_free()
 func _restart_hry() -> void:
 	score = 0
 	lives = 3
