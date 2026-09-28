@@ -26,6 +26,8 @@ var sfx := {}
 var cas_hry: float = 0.0
 var cas_do_obnovy: float = 0.0
 var cas_dalsiho_kroku: float = 0.0
+var cas_v_levelu: float = 0.0
+var cas_dalsi_hud: float = 0.0
 var stit_trvani: float = 0.0
 var intenzita_tresu: float = 0.0
 var paused := false
@@ -135,7 +137,7 @@ func _ready() -> void:
 
 func _update_hud() -> void:
 	if hud:
-		hud.text = "MINCE: %d / %d (nejlepší: %d)   Životy: %d" % [score, mince_v_levelu, best, lives]
+		hud.text = "MINCE: %d / %d (nejlepší: %d)   Životy: %d   ČAS: %d s" % [score, mince_v_levelu, best, lives, int(cas_v_levelu)]
 	if level_label:
 		level_label.text = "LEVEL: %d / 3" % (aktualni_level_index + 1)
 	var progress_rect := get_node_or_null("ProgressRect")
@@ -237,6 +239,7 @@ func _add_level() -> void:
 	level = node
 	add_child(level)
 	level.build()
+	cas_v_levelu = 0.0
 	mince_v_levelu = get_tree().get_nodes_in_group("coin").size()
 
 	# Odstranění starých objektů
@@ -498,6 +501,7 @@ func _stop_smer() -> void:
 
 func _process(delta: float) -> void:
 	cas_hry += delta
+	cas_v_levelu += delta
 	cas_do_obnovy += delta
 	stit_trvani = max(0.0, stit_trvani - delta)
 	if cas_do_obnovy > 6.0:
@@ -528,6 +532,10 @@ func _process(delta: float) -> void:
 	if player and player.velocity.length() > 10.0 and cas_dalsiho_kroku <= 0.0:
 		play_sfx("step")
 		cas_dalsiho_kroku = 0.32
+	cas_dalsi_hud = max(0.0, cas_dalsi_hud - delta)
+	if cas_dalsi_hud <= 0.0:
+		cas_dalsi_hud = 1.0
+		_update_hud()
 
 
 func _safe_spot(vp: Vector2) -> Vector2:
@@ -722,6 +730,7 @@ func _restart_hry() -> void:
 	paused = false
 	Engine.time_scale = 1.0
 	get_tree().paused = false
+	cas_v_levelu = 0.0
 	var win_label := get_node_or_null('WinLabel')
 	if win_label:
 		win_label.visible = false
