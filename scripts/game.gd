@@ -255,6 +255,7 @@ func _add_level() -> void:
 		add_child(_make_coin(i, spots[i]))
 	add_child(_make_shield(vp))
 	add_child(_make_heart(vp))
+	add_child(_make_potion(vp))
 
 	# Hráč se musí postavit na spawn NOVÉ úrovně. Pozice se dřív nastavovala jen
 	# při vzniku hráče, takže po přechodu na další úroveň (i po restartu) zůstal
@@ -636,6 +637,20 @@ func _make_heart(vp: Vector2) -> Area2D:
 	h.area_entered.connect(_on_heart_touched.bind(h))
 	return h
 
+func _make_potion(vp: Vector2) -> Area2D:
+	var p := Area2D.new()
+	p.name = "Potion"
+	p.add_to_group("potion")
+	var shape := CollisionShape2D.new()
+	var circle := CircleShape2D.new()
+	circle.radius = 5.0
+	shape.shape = circle
+	p.add_child(shape)
+	p.add_child(_visual("pickup", Color(0.75, 0.5, 1.0), Vector2(9, 9)))
+	p.position = _safe_spot(vp)
+	p.area_entered.connect(_on_potion_touched.bind(p))
+	return p
+
 
 func _on_chest_touched(other: Area2D, chest: Area2D) -> void:
 	if other != player or not is_instance_valid(chest) or not chest.is_in_group("chest"):
@@ -672,6 +687,14 @@ func _on_heart_touched(other: Area2D, heart: Area2D) -> void:
 	_update_hud()
 	heart.remove_from_group("heart")
 	heart.queue_free()
+
+func _on_potion_touched(other: Area2D, potion: Area2D) -> void:
+	if other != player or not is_instance_valid(potion) or not potion.is_in_group("potion"):
+		return
+	play_sfx("pickup")
+	player.bonus_rychlost = 60.0
+	potion.remove_from_group("potion")
+	potion.queue_free()
 func _restart_hry() -> void:
 	score = 0
 	lives = 3
