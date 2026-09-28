@@ -590,6 +590,7 @@ func _on_enemy_touched(other: Area2D, enemy: Area2D) -> void:
 	_update_hud()
 	enemy.visible = false
 	enemy.remove_from_group("enemy")
+	_jiskry(enemy.position, Color(0.8, 0.8, 0.9))
 	enemy.queue_free()
 	if lives <= 0:
 		var game_over_label := get_node_or_null('GameOverLabel')
