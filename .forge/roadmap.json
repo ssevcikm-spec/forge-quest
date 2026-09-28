@@ -1,228 +1,133 @@
 {
   "_popis": [
-    "Fronta úkolů, které má orchestr dělat SÁM, když nemá nic od tebe.",
-    "Conductor vezme vždy první položku, která ještě není hotová, založí z ní úkol",
-    "a teprve pak se ptá znovu – takže se pracuje po jedné a nevzniká zmatek.",
-    "",
-    "Pravidla pro položky:",
-    "  • musí být MALÉ a samostatné (jeden soubor, jedna změna),",
-    "  • musí být ADITIVNÍ – nesmí měnit to, co hlídají testy (ty se pouští po každé změně),",
-    "  • id musí být unikátní a neměnné (podle něj conductor pozná, co už proběhlo).",
-    "",
-    "Když je hotovo, conductor se zastaví sám (a napíše to do notifikace).",
-    "Otevřené pull requesty se počítají: když jich visí víc než ROADMAP_MAX_PRS,",
-    "conductor počká, až je zkontroluješ – nemá smysl vršit další."
+    "Dlouhá etapa pro samostatnou práci orchestra (naplánováno ručně 28. 9. 2026).",
+    "Conductor bere vždy první položku, kterou ještě nemá v databázi, založí z ní",
+    "úkol pro agenta a pracuje po jedné – takže se úkoly neperou o stejný soubor.",
+    "Pravidla pro každý úkol: jen scripts/*.gd, maximálně ~60 řádků, žádné změny",
+    "v tests/ ani .github/, a každý nový handler _on_* musí být připojený k signálu",
+    "(jinak ho brána .forge/check-wiring.py odmítne). Všechny použité funkce už v kódu",
+    "existují – nevymýšlej nové názvy, které nikde nejsou."
   ],
   "tasks": [
     {
-      "id": "pridat-neprijatel",
-      "title": "Nepřítel, který se dá porazit skokem",
+      "id": "stit-jako-predmet",
+      "title": "Štít jako sbíratelný předmět",
       "kind": "code",
-      "prompt": "V souboru scripts/game.gd: přidej výše `_make_enemy` funkci zpracovávající kolizi zhora. Když hráč skočí na nepřítele, zavolej `_on_enemy_touched` s animací a odstraň nepřítele. Přidej v `enemy.gd` proměnnou `is_dead` a zkontroluj kolizi zhora ve `_physics_process`."
+      "prompt": "V scripts/game.gd přidej funkci `_make_shield(vp: Vector2) -> Area2D`: vytvoří Area2D, nastaví jméno 'Shield', přidá do skupiny 'shield', přidá CollisionShape2D s CircleShape2D (radius 5) a vizuál přes existující `_visual(\"powerup\", Color(0.45, 0.85, 1.0), Vector2(9, 9))`, pozici vezmi z existující `_safe_spot(vp)` a připoj signál: `s.area_entered.connect(_on_shield_touched.bind(s))`. Přidej funkci `_on_shield_touched(other: Area2D, shield: Area2D) -> void`, která zkontroluje `other == player` a `is_instance_valid(shield)`, zavolá existující `play_sfx(\"powerup\")`, nastaví existující proměnnou `stit_trvani = 6.0` a předmět uklidí (`remove_from_group` + `queue_free`). Ve funkci `_add_level()` vytvoř jeden štít: `add_child(_make_shield(vp))` hned za cyklem, který přidává mince. Nic jiného neměň."
     },
     {
-      "id": "pridat-ukazatel",
-      "title": "Ukazatel průběhu úrovně",
+      "id": "srdce-zivot-navic",
+      "title": "Srdce přidá život",
       "kind": "code",
-      "prompt": "V souboru scripts/game.gd: v `_update_hud` přidej obdélník pro ukazatel průběhu (1/7) pomocí `CanvasItem` nebo `TextureRect`. Změň `_ready` tak, aby vykresloval aktuální level index a celkový počet úrovní z proměnné `aktualni_level_index`."
+      "prompt": "V scripts/game.gd přidej funkci `_make_heart(vp: Vector2) -> Area2D`: Area2D se jménem 'Heart', skupina 'heart', CollisionShape2D + CircleShape2D (radius 5), vizuál `_visual(\"pickup\", Color(1.0, 0.35, 0.45), Vector2(9, 9))`, pozice z `_safe_spot(vp)`, a připoj `h.area_entered.connect(_on_heart_touched.bind(h))`. Funkce `_on_heart_touched(other: Area2D, heart: Area2D) -> void`: když `other == player` a srdce je platné, zavolej `play_sfx(\"levelup\")`, zvyš `lives` jen do stropu 5 (`lives = min(lives + 1, 5)`), zavolej `_update_hud()` a srdce uklid. Do `_add_level()` přidej jedno srdce: `add_child(_make_heart(vp))` za přidání mincí. Nic dalšího neměň."
     },
     {
-      "id": "plynuly-prijit",
-      "title": "Plynulý přechod mezi úrovněmi",
+      "id": "elixir-rychlosti",
+      "title": "Elixír rychlosti",
       "kind": "code",
-      "prompt": "V souboru scripts/game.gd: přidej do `_add_level` animaci zmizení a objevení mapy (např. Alpha fade). Použij `Tween` pro plynulé změny průhlednosti `level` a `hud` při změně úrovně. Ujisti se, že `_add_level` vymaže předchozí level a inicializuje nový."
+      "prompt": "V scripts/game.gd přidej funkci `_make_potion(vp: Vector2) -> Area2D`: Area2D 'Potion', skupina 'potion', CollisionShape2D + CircleShape2D (radius 5), vizuál `_visual(\"pickup\", Color(0.75, 0.5, 1.0), Vector2(9, 9))`, pozice z `_safe_spot(vp)`, signál `p.area_entered.connect(_on_potion_touched.bind(p))`. Funkce `_on_potion_touched(other: Area2D, potion: Area2D) -> void`: při dotyku hráče zavolej `play_sfx(\"pickup\")`, nastav `player.bonus_rychlost = 60.0` (proměnná už existuje v scripts/player.gd a sama se postupně snižuje) a předmět uklid. V `_add_level()` přidej jeden elixír za mincemi. Neměň nic v scripts/player.gd."
     },
     {
-      "id": "vyherni-obrazovka",
-      "title": "Obrazovka po dokončení poslední úrovně",
+      "id": "kroky-pri-chuzi",
+      "title": "Zvuk kroků při chůzi",
       "kind": "code",
-      "prompt": "V souboru scripts/game.gd: přidej funkci `_show_win_screen` v `_process`, která vytvoří nový `Label` nebo `TextureRect` s textem 'Vyhráno!' a zobrazením času a skóre. Změň `_restart_hry` tak, aby po kliknutí nebo dotyku přesunul hráče na první level."
+      "prompt": "V scripts/game.gd přidej novou proměnnou `var cas_dalsiho_kroku: float = 0.0` vedle ostatních proměnných. Ve funkci `_process(delta: float)` na jejím konci odečti `cas_dalsiho_kroku = max(0.0, cas_dalsiho_kroku - delta)` a když je hráč platný a `player.velocity.length() > 10.0` a `cas_dalsiho_kroku <= 0.0`, zavolej `play_sfx(\"step\")` a nastav `cas_dalsiho_kroku = 0.32`. Použij existující `play_sfx` a existující proměnnou `player`. Žádné jiné chování neměň."
     },
     {
-      "id": "chest-unlock2",
-      "title": "Odemčení východu mincemi (druhý pokus)",
+      "id": "mince-jiskreni",
+      "title": "Jiskry při sebrání mince",
       "kind": "code",
-      "prompt": "V souboru `scripts/game.gd` přidej proměnnou `var mince_v_levelu: int = 0`. Ve funkci `_add_level()` po zavolání `level.build()` nastav `mince_v_levelu` na počet uzlů ve skupině `coin`. Uprav funkci `_on_chest_touched(other, chest)`: pokud je počet nasbíraných mincí (skóre v daném levelu) menší než `mince_v_levelu`, přehraj zvuk 'denied' (pokud existuje) a funkci ukonči. Pokud je podmínka splněna, inkrementuj `aktualni_level_index`. Pokud je index menší než počet dostupných levelů (3), zavolej znovu `_add_level()`. Pokud je index na konci, zobraz `WinLabel`."
+      "prompt": "V scripts/game.gd přidej funkci `_jiskry(pozice: Vector2, barva: Color) -> void`: vytvoří 4 uzly ColorRect (velikost Vector2(2, 2), barva z parametru, pozice `pozice` posunutá o `randf_range(-4.0, 4.0)` v obou osách), přidá je přes `add_child`, a pro každý spustí `create_tween()` s `tween.parallel().tween_property(u, \"position\", u.position + Vector2(randf_range(-10.0, 10.0), randf_range(-10.0, 10.0)), 0.35)`, `tween.parallel().tween_property(u, \"modulate:a\", 0.0, 0.35)` a `tween.tween_callback(u.queue_free)`. Pak v existující funkci `_on_coin_touched` zavolej `_jiskry(coin.position, Color(1.0, 0.85, 0.3))` před uklizením mince. Neměň počítání skóre ani `_update_hud`."
     },
     {
-      "id": "level-progression-state",
-      "title": "Správa indexu úrovní",
+      "id": "nepritel-prach",
+      "title": "Obláček prachu po sešlápnutí",
       "kind": "code",
-      "prompt": "V souboru `scripts/game.gd` přidej proměnnou `var aktualni_level_index: int = 0`. Uprav funkci `_add_level()` tak, aby načítala soubor podle indexu ze seznamu `[\"main.json\", \"level_2.json\", \"level_3.json\"]` uložených v `LEVEL_DIR`. Před sestavením nového levelu (`level.build()`) v této funkci zajisti odstranění starých objektů ze skupin `coin` a `enemy` pomocí `get_tree().get_nodes_in_group()`. Uprav `_ready()`, aby na začátku volala `_add_level()` místo fixního jména. Pokud `level.load_file` selže, vypiš chybu do konzole."
+      "prompt": "V scripts/game.gd použij vzor z funkce `_jiskry` (pokud v souboru ještě není, vytvoř ji stejně jako v úkolu o jiskrách) a v existující funkci `_on_enemy_stomped(enemy: Area2D)` zavolej `_jiskry(enemy.position, Color(0.8, 0.8, 0.9))` ještě před `enemy.queue_free()`. Zachovej ostatní chování funkce (odebrání ze skupiny 'enemy', `play_sfx(\"hit\")`, `queue_free`). Když funkce `_jiskry` v souboru neexistuje, přidej ji mezi pomocné funkce."
     },
     {
-      "id": "chest-unlock-logic",
-      "title": "Odemčení východu mincemi",
+      "id": "casovac-urovne",
+      "title": "Časomíra úrovně v HUD",
       "kind": "code",
-      "prompt": "V souboru `scripts/game.gd` přidej proměnnou `var mince_v_levelu: int = 0`. Ve funkci `_add_level()` po zavolání `level.build()` nastav `mince_v_levelu` na počet uzlů ve skupině `coin`. Uprav funkci `_on_chest_touched(other, chest)`: pokud je počet nasbíraných mincí (skóre v daném levelu) menší než `mince_v_levelu`, přehraj zvuk 'denied' (pokud existuje) a funkci ukonči. Pokud je podmínka splněna, inkrementuj `aktualni_level_index`. Pokud je index menší než počet dostupných levelů (3), zavolej znovu `_add_level()`. Pokud je index na konci, zobraz `WinLabel`."
+      "prompt": "V scripts/game.gd přidej proměnnou `var cas_v_levelu: float = 0.0`. Ve funkci `_process(delta: float)` ji zvyšuj (`cas_v_levelu += delta`). V `_add_level()` ji vynuluj (`cas_v_levelu = 0.0`) a v `_restart_hry()` také. V existující funkci `_update_hud()` rozšiř text HUD o `\"   ČAS: %d s\" % int(cas_v_levelu)`. Protože se HUD jinak aktualizuje jen při změně stavu, přidej proměnnou `var cas_dalsi_hud: float = 0.0`, v `_process` ji snižuj jako `cas_dalsiho_kroku` a když klesne na nulu, nastav ji na 1.0 a zavolej `_update_hud()`. Nic jiného neměň."
     },
     {
-      "id": "game-restart-logic",
-      "title": "Systém restartu hry",
+      "id": "nejlepsi-cas-ukladani",
+      "title": "Nejlepší čas se ukládá",
       "kind": "code",
-      "prompt": "V souboru `scripts/game.gd` vytvoř funkci `_restart_hry()`, která vynuluje `score`, `lives` na 3, `aktualni_level_index` na 0 a zavolá `_add_level()`. Skryj `WinLabel`. Uprav funkci `_input(event: InputEvent)`, aby při stisku klávesy `KEY_R` zavolala `_restart_hry()`. Tato klávesa musí fungovat, i když je hra v režimu 'game over' nebo hráč vyhrál. Zajisti, aby po restartu byla proměnná `paused` nastavena na `false` a `Engine.time_scale` na 1.0."
+      "prompt": "V scripts/game.gd rozšiř existující ukládání do `user://best.cfg` o nejlepší čas: přidej proměnnou `var nejlepsi_cas: float = 0.0`. V existující funkci `_save_best()` (pracuje s ConfigFile na `user://best.cfg`) ulož do sekce \"hra\" klíč \"cas\" hodnotu `nejlepsi_cas`. V existující funkci `_load_best()` ji načti přes `cfg.get_value(\"hra\", \"cas\", 0.0)`. V `_on_chest_touched` porovnej `cas_v_levelu` s `nejlepsi_cas`: pokud je `nejlepsi_cas` nula nebo je `cas_v_levelu` menší, nastav `nejlepsi_cas = cas_v_levelu` a zavolej `_save_best()`. Do textu HUD v `_update_hud()` přidej `\"   NEJ: %d s\" % int(nejlepsi_cas)`. Neměň ukládání skóre."
     },
     {
-      "id": "hud-level-display",
-      "title": "Zobrazení čísla úrovně",
+      "id": "pauza-ovladani",
+      "title": "Pauza s nápovědou",
       "kind": "code",
-      "prompt": "V souboru `scripts/game.gd` ve funkci `_add_ui()` vytvoř nový `Label` s názvem `level_label` a přidej ho do `hud`. Umísti ho do horní části obrazovky vedle skóre. Vytvoř proměnnou ve třídě pro tento label. Ve funkci `_update_hud()` aktualizuj text tohoto labelu na formát 'LEVEL: [aktualni_level_index + 1]'. Také uprav zobrazení skóre tak, aby ukazovalo 'MINCE: [score] / [mince_v_levelu]'."
+      "prompt": "V scripts/game.gd v `_add_ui()` vytvoř Label 'PauseLabel' s textem \"PAUZA – WASD pohyb, M hudba, P pokračovat\", vycentrovaný na střed obrazovky, `visible = false`. V existující funkci `_input(event: InputEvent)` přidej na klávesu KEY_P přepnutí pauzy: `get_tree().paused = not get_tree().paused` a podle stavu zobraz/skryj `pause_label`. Ošetři null (`if pause_label == null: return`). Ostatní klávesy (M pro hudbu) nech beze změny a nepřidávej druhé zpracování stejné klávesy."
     },
     {
-      "id": "enemy-scaling-difficulty",
-      "title": "Zvyšování obtížnosti",
+      "id": "uroven-uvodni-banner",
+      "title": "Úvodní banner úrovně",
       "kind": "code",
-      "prompt": "V souboru `scripts/game.gd` uprav funkci `_make_enemy(name: String, vp: Vector2)`. Před vrácením vytvořeného `Area2D` nepřítele mu uprav vlastnost `rychlost` (nebo `SPEED`, pokud ji má) na základě `aktualni_level_index`. Vzorec bude: `zakladni_rychlost * (1.0 + aktualni_level_index * 0.2)`. Pokud nepřítel používá skript `scripts/enemy.gd`, ujisti se, že tam tato proměnná existuje. Pokud ne, přidej do `scripts/enemy.gd` proměnnou `var rychlost_nasobic: float = 1.0` a zohledni ji v pohybu."
+      "prompt": "V scripts/game.gd v `_add_ui()` vytvoř Label 'IntroLabel' s vycentrovaným textem, `visible = false`, umístěný doprostřed obrazovky (použij `get_viewport_rect().size`). V `_add_level()` po postavení úrovně nastav `intro_label.text = \"LEVEL %d / 3\" % (aktualni_level_index + 1)`, `intro_label.visible = true` a spusť `create_tween()`, který po 1.5 s label skryje (`tween.tween_interval(1.5)`, `tween.tween_callback(func(): intro_label.visible = false)`). Ošetři null (`if intro_label == null: return`). Nic jiného neměň."
     },
     {
-      "id": "level-transition-cleanup",
-      "title": "Čištění scény při přechodu",
+      "id": "nepritel-druhy-typ",
+      "title": "Druhý typ nepřítele (rychlejší)",
       "kind": "code",
-      "prompt": "V souboru `scripts/game.gd` vytvoř pomocnou funkci `_clear_entities()`. Tato funkce projde skupiny `coin`, `enemy`, `chest` a `player` a zavolá `queue_free()` na všechny nalezené uzly. Zavolej `_clear_entities()` na začátku funkce `_add_level()` dříve, než se vytvoří nový hráč a nové entity. Tím zajistíš, že se objekty z předchozí úrovně nebudou hromadit v paměti a na mapě."
+      "prompt": "V scripts/game.gd uprav existující funkci `_make_enemy(name: String, vp: Vector2) -> Area2D` tak, aby měla třetí volitelný parametr: `_make_enemy(name: String, vp: Vector2, rychlost: float = 1.0)`. Na konci funkce vynásob existující `e.rychlost_nasobic` hodnotou `rychlost` a když je `rychlost > 1.0`, použij pro vizuál jasnější barvu `_visual(\"enemy\", Color(1.0, 0.45, 0.1), Vector2(9, 9))` místo stávající. Ve funkci `_add_level()` vytvoř jednoho rychlého nepřítele navíc: `add_child(_make_enemy(\"EnemyFast\", vp, 1.6))` za stávajícím vytvářením nepřátel. Ověř, že všechna stávající volání `_make_enemy` dál fungují – druhý parametr zůstává povinný, třetí je volitelný."
     },
     {
-      "id": "player-momentum-base",
-      "title": "Základ hybnosti hráče",
+      "id": "zivoty-jako-srdce",
+      "title": "Životy jako srdce v HUD",
       "kind": "code",
-      "prompt": "V souboru `scripts/player.gd` přidej novou proměnnou `var bonus_rychlost: float = 0.0`. Ve funkci `_physics_process(delta: float)` uprav řádek vypočítávající pohyb tak, aby se k `SPEED` přičítala `bonus_rychlost` (např. `var current_speed = SPEED + bonus_rychlost`). Na konec této funkce přidej kód pro postupné snižování bonusu: `bonus_rychlost = lerp(bonus_rychlost, 0.0, delta * 2.5)`. Tím připravíš mechaniku pro krátkodobé zrychlení."
+      "prompt": "V scripts/game.gd uprav existující `_update_hud()` tak, aby místo čísla u životů vypsala srdce: `\"Životy: \" + \"♥\".repeat(max(0, lives))` (Godot 4 umí `String.repeat`). Za srdce přidej i číslo v závorce, `\" (%d)\" % lives`, aby byl stav čitelný i při špatném fontu. Zbytek textu HUD zachovej. Nic dalšího neměň."
     },
     {
-      "id": "coin-speed-trigger",
-      "title": "Impuls ze sebrané mince",
+      "id": "hlaska-pri-akci",
+      "title": "Krátká hláška při sebrání předmětu",
       "kind": "code",
-      "prompt": "V souboru `scripts/game.gd` uprav funkci `_on_coin_touched(other: Area2D, coin: Area2D)`. Na začátek funkce přidej kód, který hráči udělí rychlostní impuls: `if player: player.bonus_rychlost += 120.0`. Zároveň zajisti, aby se `player.bonus_rychlost` nepřehoupla přes limit 400.0 pomocí funkce `clamp`. Tím hráč dostane pocit flow při sbírání více mincí za sebou."
+      "prompt": "V scripts/game.gd v `_add_ui()` vytvoř Label 'ToastLabel' (`visible = false`, umístěný pod HUD, vycentrovaný). Přidej funkci `_hlaseni(text: String) -> void`, která labelu nastaví text, `visible = true`, `modulate.a = 1.0` a spustí `create_tween()`: `tween.tween_interval(1.2)`, `tween.tween_property(toast_label, \"modulate:a\", 0.0, 0.4)`, `tween.tween_callback(func(): toast_label.visible = false)`. Zavolej `_hlaseni(\"ŠTÍT +6 s\")` v `_on_shield_touched`, `_hlaseni(\"ŽIVOT NAVÍC\")` v `_on_heart_touched` a `_hlaseni(\"RYCHLEJI!\")` v `_on_potion_touched`. Ošetři null (`if toast_label == null: return`). Když některá z těch funkcí v souboru ještě není, vytvoř ji podle stejného vzoru."
     },
     {
-      "id": "shield-logic-chest",
-      "title": "Mechanika štítu z truhly",
+      "id": "nepritel-kontrast",
+      "title": "Nepřítel nesmí splývat s podlahou",
       "kind": "code",
-      "prompt": "V souboru `scripts/game.gd` přidej novou proměnnou `var stit_trvani: float = 0.0`. Ve funkci `_process(delta: float)` tuto hodnotu snižuj: `stit_trvani = max(0.0, stit_trvani - delta)`. Uprav funkci `_on_enemy_touched(other: Area2D, enemy: Area2D)` tak, aby se stávající logika poškození (odečtení života, zvuk) provedla pouze v případě, že `stit_trvani <= 0.0`. Nakonec ve funkci `_on_chest_touched` nastav `stit_trvani = 6.0`."
+      "prompt": "Naměřeno: barvy nepřítele jsou od dlaždic podlahy vzdálené jen ~93 z 765, takže nepřítel na podlaze opticky mizí. V scripts/game.gd v existující funkci `_make_enemy(...)` přidej za vytvoření Area2D tmavý podklad jako obrys: `var obrys := ColorRect.new()`, `obrys.color = Color(0.08, 0.08, 0.12)`, `obrys.size = Vector2(12, 12)`, `obrys.position = Vector2(-6, -6)`, `obrys.z_index = -1`, `e.add_child(obrys)` – a to PŘED přidáním vizuálu, aby byl obrys pod postavou. Stejný obrys přidej do `_make_coin` (velikost 10x10, pozice -5,-5) a do `_make_chest` (velikost 16x16). Cílem je, aby každý herní objekt měl tmavý lem a byl čitelný na dlaždicích. Nic dalšího neměň."
     },
     {
-      "id": "enemy-dynamic-speed",
-      "title": "Dynamické zrychlení nepřátel",
+      "id": "minimapa-legenda",
+      "title": "Legenda u minimapy",
       "kind": "code",
-      "prompt": "V souboru `scripts/game.gd` uprav funkci `_move_enemies(delta: float)`. Uvnitř cyklu `for e in get_tree().get_nodes_in_group(\"enemy\"):` vypočítej multiplikátor rychlosti na základě zbývajících mincí: `var m: float = 1.0 + (float(COIN_COUNT - coin_total) / COIN_COUNT) * 0.8`. Uprav řádek s pohybem pozice nepřítele tak, aby se `e.smer` násobil tímto multiplikátorem `m`. Nepřátelé tak budou nebezpečnější ke konci úrovně."
+      "prompt": "V scripts/game.gd v `_add_ui()` vytvoř Label 'MinimapLegend' s textem \"■ ty   ● mince\", malým písmem přes `add_theme_font_size_override(\"font_size\", 8)`, `modulate = Color(0.9, 0.9, 0.9)`, a umísti ho pod existující minimapu (stejné souřadnice jako minimapa, posunuté o její výšku + 2 px). Když je `minimap == null`, legendu vůbec nevytvářej. Nic dalšího neměň."
     },
     {
-      "id": "hit-shake-effect",
-      "title": "Třes obrazovky při zásahu",
+      "id": "ukladani-progresu",
+      "title": "Uložení rozehrané pozice",
       "kind": "code",
-      "prompt": "V souboru `scripts/game.gd` přidej proměnnou `var intenzita_tresu: float = 0.0`. Ve funkci `_on_enemy_touched` nastav `intenzita_tresu = 1.0` (pouze pokud hráč nemá aktivní štít). Ve funkci `_process(delta: float)` přidej kód: `if intenzita_tresu > 0: hud.position = Vector2(randf_range(-8, 8), randf_range(-8, 8)) * intenzita_tresu`. Na konec `_process` přidej `intenzita_tresu = move_toward(intenzita_tresu, 0.0, delta * 3.0)` a resetuj `hud.position = Vector2.ZERO` pokud je třes nulový."
+      "prompt": "V scripts/game.gd přidej funkce `_save_progres() -> void` a `_load_progres() -> void`, které pracují s `ConfigFile` a souborem `user://progres.cfg` (stejný vzor jako existující `_save_best` a `_load_best`). Ukládej klíč \"uroven\" s hodnotou `aktualni_level_index` a klíč \"skore\" s hodnotou `score`. `_save_progres()` volej v `_on_chest_touched` při posunu na další úroveň a v `_restart_hry()`. `_load_progres()` volej v `_ready()` po načtení nejlepšího skóre: načti index, ověř že je v rozsahu 0 až 2, a nastav `aktualni_level_index` a `score`. Když soubor neexistuje (`cfg.load(...) != OK`), funkce jen skončí. Neměň `_save_best` ani `_load_best`."
     },
     {
-      "id": "visual-shield-feedback",
-      "title": "Vizuální indikace štítu",
+      "id": "hud-zbyva-minci",
+      "title": "HUD ukáže, kolik mincí zbývá",
       "kind": "code",
-      "prompt": "V souboru `scripts/game.gd` uprav funkci `_process(delta: float)`. Přidej kontrolu `stit_trvani`. Pokud je `stit_trvani > 0.0`, nastav `player.modulate = Color(0.2, 0.6, 1.0, 1.0)` (neonově modrá) a pokud zbývá méně než 1.5 sekundy, nechej barvu blikat pomocí `sin(Time.get_ticks_msec() * 0.02)`. Pokud štít není aktivní, nastav `player.modulate = Color(1, 1, 1, 1)`. Tím hráč jasně pozná, kdy je v bezpečí."
+      "prompt": "V scripts/game.gd uprav text v existující `_update_hud()`: za mince přidej počet zbývajících, tedy `\"ZBÝVÁ: %d\" % max(0, coin_total - score)`. Použij existující proměnné `coin_total` a `score`. Zbytek textu (životy, čas, nejlepší čas) zachovej. Nic dalšího neměň."
     },
     {
-      "id": "pause-space",
-      "title": "Pauza mezerníkem",
+      "id": "hud-obtiznost",
+      "title": "HUD ukáže obtížnost",
       "kind": "code",
-      "prompt": "V souboru scripts/game.gd přidej pauzu: při stisku klávesy SPACE se přepne proměnná paused a podle ní se nastaví get_tree().paused. Když je pauza, zobraz Label s textem 'PAUZA' (vytvoř ho jen jednou, jen mu přepínej visible). Na začátku hry musí být pauza vypnutá. Nic jiného v projektu neměň."
+      "prompt": "V scripts/game.gd uprav existující `_update_hud()`: na konec textu přidej obtížnost podle úrovně, `\"OBTÍŽNOST: %.1fx\" % (1.0 + aktualni_level_index * 0.2)`. Použij existující proměnnou `aktualni_level_index`. Zbytek textu HUD zachovej. Nic dalšího neměň."
     },
     {
-      "id": "fps-label",
-      "title": "Počítadlo FPS",
+      "id": "vyhra-zvuk-a-label",
+      "title": "Výhra: zvuk a hlášení",
       "kind": "code",
-      "prompt": "V souboru scripts/game.gd přidej Label s názvem Fps, který bude v pravém horním rohu obrazovky a v _process bude zobrazovat aktuální FPS ve formátu 'FPS: %d' pomocí Engine.get_frames_per_second(). Nic jiného neměň."
+      "prompt": "V scripts/game.gd v existující funkci `_on_chest_touched` zajisti, že při skutečné výhře (když už není další úroveň) se zavolá `play_sfx(\"win\")`, zobrazí existující `WinLabel` a zastaví hudba (`music.stop()` – jen když proměnná `music` v souboru existuje). Do textu výherního hlášení přidej čas a skóre: `\"VYHRÁL JSI!  Čas: %d s   Skóre: %d\" % [int(cas_v_levelu), score]`. Ošetři null u WinLabel. Neměň logiku posunu na další úroveň."
     },
     {
-      "id": "enemies",
-      "title": "Dva nepřátelé ve scéně",
+      "id": "chveni-pri-seslapnuti",
+      "title": "Zachvění obrazovky při sešlápnutí",
       "kind": "code",
-      "prompt": "V souboru scripts/game.gd přidej do scény dva nepřátele: Area2D s názvem Enemy1 a Enemy2, každý dostane Sprite2D s texturou res://assets/sprites/enemy.png (když soubor neexistuje, použij ColorRect). Umísti je na rozumné pozice mimo hráče a přidej jim do skupiny 'enemy'. Když se jich hráč dotkne, přehraj zvuk 'hurt'. Nic jiného neměň."
-    },
-    {
-      "id": "chest-pickup",
-      "title": "Truhla s odměnou",
-      "kind": "code",
-      "prompt": "V souboru scripts/game.gd přidej do scény truhlu na pevné pozici: Area2D s názvem Chest a Sprite2D s texturou res://assets/sprites/chest.png (když není, použij ColorRect). Když se s ní hráč střetne, přehraje se zvuk 'powerup' a truhla zmizí. Nic jiného neměň."
-    },
-    {
-      "id": "hit-flash",
-      "title": "Bliknutí hráče při zásahu",
-      "kind": "code",
-      "prompt": "V souboru scripts/player.gd přidej veřejnou metodu flash(), která na krátkou chvíli (například 0,15 sekundy) změní modulaci hráče na červenou a pak ji vrátí na bílou. Použij k tomu tween nebo await get_tree().create_timer(). Nic dalšího neměň a nepřidávej volání odjinud."
-    },
-    {
-      "id": "enemy-patrol",
-      "title": "Nepřátelé se hýbou a neprojdou zdí",
-      "kind": "code",
-      "prompt": "V souboru scripts/game.gd přidej nepřátelům pohyb po úrovni. Uzly nepřátel jsou ve skupině 'enemy' a vytváří je funkce _make_enemy. Udělej přesně tohle: (1) v _make_enemy nastav nepříteli vlastnost smer typu Vector2 na Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)).normalized(); (2) přidej funkci _move_enemies(delta: float) -> void a zavolej ji z _process; (3) v té funkci nejdřív var mapa: Node = get_tree().get_first_node_in_group('level') a var vp: Vector2 = get_viewport_rect().size, potom for uzel in get_tree().get_nodes_in_group('enemy'): var cil: Vector2 = uzel.position + uzel.smer * 40.0 * delta; když mapa != null a mapa.has_method('is_walkable_at') a mapa.is_walkable_at(cil) je false, nastav uzel.smer = -uzel.smer a nepřítele neposouvej; jinak když je cil mimo obrazovku (cil.x < 0 nebo cil.x > vp.x nebo cil.y < 0 nebo cil.y > vp.y), také otoč směr; jinak nastav uzel.position = cil. DŮLEŽITÉ: u proměnných používej výslovný typ (například 'var cil: Vector2 = ...'), NIKDY 'var cil := ...' u hodnot pocházejících z uzlů bez typu – Godot by ohlásil 'Cannot infer the type', skript hry by se nenačetl a celá hra by přestala fungovat. Nic dalšího v projektu neměň a nic nemaž."
-    },
-    {
-      "id": "exit-win",
-      "title": "Východ z úrovně ukončí hru",
-      "kind": "code",
-      "prompt": "V souboru scripts/game.gd přidej výhru: v _ready vytvoř Label s názvem WinLabel, textem 'VYHRÁL JSI!' a nastav mu visible = false (umísti ho doprostřed obrazovky, stejně jako je udělaný PauseLabel). Ve funkci _on_chest_touched po sehrání truhly nastav WinLabel.visible = true a nastav get_tree().paused = true. Nic dalšího neměň a nic nemaž."
-    },
-    {
-      "id": "minimap",
-      "title": "Miniatura mapy v rohu obrazovky",
-      "kind": "code",
-      "prompt": "V souboru scripts/game.gd přidej do scény miniaturu mapy: v _ready vytvoř TextureRect s názvem Minimap, který má texturu res://assets/levels/main.preview.png (načti ji funkcí load, ale jen když ResourceLoader.exists vrací true), je umístěný do pravého dolního rohu obrazovky, má velikost 120x64 pixelů, stretch_mode = TextureRect.STRETCH_SCALE a z_index = 8. Když textura neexistuje, miniaturu vůbec nevytvářej. Nic dalšího neměň a nic nemaž."
-    },
-    {
-      "id": "coin-spin",
-      "title": "Mince se točí",
-      "kind": "code",
-      "prompt": "V souboru scripts/game.gd přidej mincím otáčení. Udělej to takto: (1) přidej funkci _spin_coins(cas: float) -> void, která projde get_tree().get_nodes_in_group('coin') a každé minci nastaví scale.x podle sinusu: pro každou minci spočítej var faze: float = cas * 3.0 + float(mince.get_index()) a nastav mince.scale = Vector2(abs(cos(faze)), 1.0); (2) v _process přičti čas: na začátek souboru přidej var cas_hry: float = 0.0 a v _process udělej cas_hry += delta a pak zavolej _spin_coins(cas_hry). Pozor: proměnné, které vznikají z uzlů bez typu, deklaruj s výslovným typem (například 'var faze: float = ...'), nikdy nepoužívej ':=' u hodnot z uzlů z get_nodes_in_group. Vlastnosti uzlům vytvořeným přes Area2D.new() nepřidávej. Nic dalšího neměň a nic nemaž."
-    },
-    {
-      "id": "music-mute",
-      "title": "Klávesa M vypne hudbu",
-      "kind": "code",
-      "prompt": "V souboru scripts/game.gd přidej vypínání hudby: ve funkci _input (už tam řeší mezerník pro pauzu) přidej další větev, která při stisku klávesy KEY_M (event.keycode == KEY_M a event.pressed) najde uzel hudby přes get_node_or_null('Music') a přepne mu stream_paused na opačnou hodnotu (když je uzel null, nic se neděje). Nic dalšího neměň a nic nemaž."
-    },
-    {
-      "id": "best-score",
-      "title": "Nejlepší skóre se pamatuje",
-      "kind": "code",
-      "prompt": "V souboru scripts/game.gd přidej ukládání nejlepšího skóre. Udělej to takto: (1) přidej proměnnou var best: int = 0; (2) přidej funkci _load_best() -> void, která přes ConfigFile načte z 'user://best.cfg' sekci 'hra' klíč 'skore' – použij var cfg := ConfigFile.new(), var chyba: int = cfg.load('user://best.cfg') a když chyba == OK, nastav best = int(cfg.get_value('hra', 'skore', 0)); (3) přidej funkci _save_best() -> void, která stejnou cestu uloží (cfg.set_value('hra', 'skore', best) a cfg.save('user://best.cfg')); (4) v _ready zavolej _load_best() a v _update_hud() přidej do textu HUDu i nejlepší skóre, například hud.text = 'Skóre: %d / %d (nejlepší: %d)' % [score, coin_total, best]; (5) ve funkci _on_coin_touched, když score > best, nastav best = score a zavolej _save_best(). Nic dalšího neměň a nic nemaž."
-    },
-    {
-      "id": "lives-hud",
-      "title": "Životy hráče v HUD",
-      "kind": "code",
-      "prompt": "V souboru scripts/game.gd přidej životy. Udělej to takto: (1) přidej proměnnou var lives: int = 3; (2) v _update_hud() přidej do textu HUDu i životy, například hud.text = 'Skóre: %d / %d (nejlepší: %d)   Životy: %d' % [score, coin_total, best, lives] (když proměnná best v souboru ještě není, vynech ji z textu); (3) ve funkci _on_enemy_touched po přehrání zvuku 'hurt' uber život (lives -= 1), zavolej _update_hud(), nastav nepříteli visible = false a odeber ho ze skupiny 'enemy' (enemy.remove_from_group('enemy')) a pak enemy.queue_free(); (4) když po ubraní klesnou životy na nulu nebo méně, nastav get_tree().paused = true. Nic dalšího neměň a nic nemaž."
-    },
-    {
-      "id": "minimap-dot",
-      "title": "Tečka hráče na miniatuře mapy",
-      "kind": "code",
-      "prompt": "V souboru scripts/game.gd přidej na miniaturu mapy tečku hráče. Udělej to takto: (1) v _ready, hned po vytvoření uzlu Minimap (když v _ready žádný Minimap není, nic nedělej a skonči), vytvoř ColorRect s názvem MinimapDot, barvou Color(0.35, 0.85, 1.0), velikostí Vector2(3, 3) a z_index = 9, a přidej ho jako potomka uzlu Minimap; (2) přidej funkci _update_minimap_dot() -> void, která najde uzel Minimap přes get_node_or_null('Minimap') a když je null, skončí; najde v něm potomka MinimapDot přes get_node_or_null('MinimapDot') a když je null, skončí; spočítá var vp: Vector2 = get_viewport_rect().size a nastaví tečce position na Vector2(player.position.x / vp.x * 120.0, player.position.y / vp.y * 64.0); (3) v _process zavolej _update_minimap_dot(). Nic dalšího neměň a nic nemaž."
-    },
-    {
-      "id": "exit-win2",
-      "title": "Východ z úrovně ukončí hru (druhý pokus)",
-      "kind": "code",
-      "prompt": "V souboru scripts/game.gd přidej výhru: v _ready vytvoř Label s názvem WinLabel, textem 'VYHRÁL JSI!', barvou Color(1.0, 0.9, 0.3) a nastav mu visible = false (umísti ho doprostřed obrazovky, stejně jako je udělaný PauseLabel). Ve funkci _on_chest_touched po přehrání zvuku 'powerup' nastav WinLabel.visible = true a get_tree().paused = true. Nic dalšího v projektu neměň a nic nemaž."
-    },
-    {
-      "id": "hit-flash2",
-      "title": "Hráč blikne při zásahu",
-      "kind": "code",
-      "prompt": "V souboru scripts/player.gd přidej veřejnou metodu flash() -> void, která hráče na 0,2 sekundy obarví červeně a pak vrátí bílou. Udělej to takto: modulate = Color(1.0, 0.3, 0.3) a potom await get_tree().create_timer(0.2).timeout a modulate = Color(1, 1, 1, 1). Metodu označ jako async tím, že použiješ await. V souboru scripts/game.gd pak ve funkci _on_enemy_touched (po ubraní života) zavolej player.flash() jen když player != null a player.has_method('flash'). Nic dalšího neměň a nic nemaž."
-    },
-    {
-      "id": "game-over",
-      "title": "Konec hry po ztrátě životů",
-      "kind": "code",
-      "prompt": "V souboru scripts/game.gd přidej obrazovku konce hry. Udělej to takto: (1) v _ready vytvoř Label s názvem GameOverLabel, textem 'KONEC HRY' a barvou Color(1.0, 0.35, 0.35), umísti ho doprostřed obrazovky (stejně jako WinLabel) a nastav visible = false; (2) ve funkci _on_enemy_touched, v místě kde se kontroluje lives <= 0, nastav GameOverLabel.visible = true (uzel si najdi přes get_node_or_null('GameOverLabel') a když je null, nic nedělej). Nic dalšího neměň a nic nemaž."
-    },
-    {
-      "id": "enemy-respawn",
-      "title": "Nepřátelé se po chvíli obnoví",
-      "kind": "code",
-      "prompt": "V souboru scripts/game.gd přidej obnovování nepřátel, aby hra nezůstala bez nich. Udělej to takto: (1) přidej proměnnou var cas_do_obnovy: float = 0.0; (2) v _process k ní přičti delta a když je větší než 6.0, nastav ji na 0.0 a když je get_tree().get_nodes_in_group('enemy').size() menší než 2, vytvoř nového nepřítele funkcí _make_enemy (název 'Enemy' + str(Time.get_ticks_msec())) a přidej ho přes add_child; (3) nic jiného neměň. Pozor: proměnné z uzlů bez typu deklaruj s výslovným typem (například 'var cil: Vector2 = ...'), nikdy nepoužívej ':=' u hodnot z get_nodes_in_group."
-    },
-    {
-      "id": "touch-controls",
-      "title": "Ovládání dotykem pro web a telefon",
-      "kind": "code",
-      "prompt": "Přidej ovládání dotykem pro web a telefon. Udělej to ve DVOU souborech. (A) V scripts/player.gd: přidej proměnnou var dotyk_smer: Vector2 = Vector2.ZERO a ve funkci _physics_process hned za řádek s 'var dir := Vector2.ZERO' přidej řádek 'dir += dotyk_smer' – pohyb tak projde stejnou kontrolou zdí jako klávesnice. (B) V scripts/game.gd: (1) v _ready vytvoř Node2D s názvem TouchControls, přidej ho přes add_child a nastav mu z_index = 20; (2) vytvoř čtyři Buttony s názvy TouchLeft, TouchRight, TouchUp, TouchDown a texty '<', '>', '^', 'v'; každému nastav size = Vector2(44, 44) a modulate = Color(1, 1, 1, 0.35); polohy nastav až PO add_child (u Buttonu se velikost před vložením do stromu zahazuje): TouchLeft Vector2(8, 200), TouchRight Vector2(104, 200), TouchUp Vector2(56, 152), TouchDown Vector2(56, 248); (3) přidej funkci _nastav_smer(smer: Vector2) -> void, která nastaví player.dotyk_smer = smer, a funkci _stop_smer() -> void, která nastaví player.dotyk_smer = Vector2.ZERO; signálem button_down připoj u každého tlačítka _nastav_smer se správným směrem (Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)) a signálem button_up funkci _stop_smer. Nic dalšího v projektu neměň a nic nemaž. Tlačítka nesmí být přes celou obrazovku – velikost 44x44 a pozice podle seznamu výše."
+      "prompt": "V scripts/game.gd použij existující proměnnou `intenzita_tresu`: v existující funkci `_on_enemy_stomped(enemy: Area2D)` ji nastav na `0.6` (menší zachvění než při zásahu hráče). Pokud se `intenzita_tresu` v `_process` aplikuje jen při zásahu, zajisti, že se posun kamery aplikuje vždy, když je hodnota větší než nula – ale jen přesunutím existujících řádků, ne přepisem logiky. Nic dalšího neměň."
     }
   ]
 }
