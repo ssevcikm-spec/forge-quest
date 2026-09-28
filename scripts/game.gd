@@ -17,6 +17,7 @@ var score := 0
 var coin_total := COIN_COUNT
 var mince_v_levelu: int = 0
 var best: int = 0
+var nejlepsi_cas: float = 0.0
 var lives: int = 3
 var player: Area2D
 var level: Node2D
@@ -137,7 +138,7 @@ func _ready() -> void:
 
 func _update_hud() -> void:
 	if hud:
-		hud.text = "MINCE: %d / %d (nejlepší: %d)   Životy: %d   ČAS: %d s" % [score, mince_v_levelu, best, lives, int(cas_v_levelu)]
+		hud.text = "MINCE: %d / %d (nejlepší: %d)   Životy: %d   ČAS: %d s   NEJ: %d s" % [score, mince_v_levelu, best, lives, int(cas_v_levelu), int(nejlepsi_cas)]
 	if level_label:
 		level_label.text = "LEVEL: %d / 3" % (aktualni_level_index + 1)
 	var progress_rect := get_node_or_null("ProgressRect")
@@ -695,6 +696,9 @@ func _on_chest_touched(other: Area2D, chest: Area2D) -> void:
 			win_label.visible = true
 			get_tree().paused = true
 	play_sfx("powerup")
+	if nejlepsi_cas == 0.0 or cas_v_levelu < nejlepsi_cas:
+		nejlepsi_cas = cas_v_levelu
+		_save_best()
 	stit_trvani = 6.0
 	chest.remove_from_group("chest")
 	chest.queue_free()
@@ -770,10 +774,12 @@ func _load_best() -> void:
 	var chyba: int = cfg.load('user://best.cfg')
 	if chyba == OK:
 		best = int(cfg.get_value('hra', 'skore', 0))
+		nejlepsi_cas = cfg.get_value('hra', 'cas', 0.0)
 
 func _save_best() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value('hra', 'skore', best)
+	cfg.set_value('hra', 'cas', nejlepsi_cas)
 	cfg.save('user://best.cfg')
 func _show_win_screen() -> void:
 	if get_node_or_null('WinLabel') and get_node_or_null('WinLabel').visible:
