@@ -23,6 +23,7 @@ var player: Area2D
 var level: Node2D
 var hud: Label
 var level_label: Label
+var intro_label: Label
 var sfx := {}
 var cas_hry: float = 0.0
 var cas_do_obnovy: float = 0.0
@@ -270,6 +271,14 @@ func _add_level() -> void:
 		player.position = level.cell_center(level.spawn_cell.x, level.spawn_cell.y)
 		player.velocity = Vector2.ZERO
 
+	if intro_label == null:
+		return
+	intro_label.text = "LEVEL %d / 3" % (aktualni_level_index + 1)
+	intro_label.visible = true
+	var tween = create_tween()
+	tween.tween_interval(1.5)
+	tween.tween_callback(func(): intro_label.visible = false)
+
 
 func _coin_spots(vp: Vector2) -> Array:
 	"""Mince stojí tam, kde je vyznačila mapa (středy místností – ověřeně
@@ -346,6 +355,13 @@ func _add_ui() -> void:
 	fps_label.name = "Fps"
 	fps_label.position = Vector2(get_viewport_rect().size.x - 100, 8)
 	add_child(fps_label)
+
+	intro_label = Label.new()
+	intro_label.name = "IntroLabel"
+	intro_label.text = ""
+	intro_label.position = get_viewport_rect().size / 2.0
+	intro_label.visible = false
+	add_child(intro_label)
 
 
 func _visual(asset_name: String, fallback: Color, size: Vector2) -> Node2D:
