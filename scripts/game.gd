@@ -565,7 +565,7 @@ func _process(delta: float) -> void:
 	_move_enemies(delta)
 	_update_minimap_dot()
 	intenzita_tresu = move_toward(intenzita_tresu, 0.0, delta * 3.0)
-	if intenzita_tresu == 0.0:
+	if intenzita_tresu > 0:
 		hud.position = Vector2.ZERO
 	_show_win_screen()
 	cas_dalsiho_kroku = max(0.0, cas_dalsiho_kroku - delta)
@@ -669,6 +669,7 @@ func _on_enemy_stomped(enemy: Area2D) -> void:
 	# přičtení za nepřítele by mohlo ukončit úroveň před sebraním mincí.
 	enemy.remove_from_group("enemy")
 	enemy.queue_free()
+	intenzita_tresu = 0.6
 
 
 func _make_chest(vp: Vector2) -> Area2D:
