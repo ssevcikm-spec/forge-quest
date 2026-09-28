@@ -758,6 +758,15 @@ func _on_chest_touched(other: Area2D, chest: Area2D) -> void:
 	stit_trvani = 6.0
 	chest.remove_from_group("chest")
 	chest.queue_free()
+	var win_label := get_node_or_null('WinLabel')
+	if win_label:
+		win_label.text = "VYHRÁL JSI!  Čas: %d s   Skóre: %d" % [int(cas_v_levelu), score]
+		win_label.visible = true
+		get_tree().paused = true
+	var music := get_node_or_null('Music')
+	if music:
+		music.stop()
+	play_sfx("win")
 
 func _on_shield_touched(other: Area2D, shield: Area2D) -> void:
 	if other != player or not is_instance_valid(shield):
