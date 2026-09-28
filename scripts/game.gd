@@ -435,12 +435,26 @@ func _make_coin(index: int, pos: Vector2) -> Area2D:
 	return c
 
 
+func _jiskry(pozice: Vector2, barva: Color) -> void:
+	for i in 4:
+		var u := ColorRect.new()
+		u.size = Vector2(2, 2)
+		u.color = barva
+		u.position = pozice + Vector2(randf_range(-4.0, 4.0), randf_range(-4.0, 4.0))
+		u.z_index = 10
+		add_child(u)
+		var tween := create_tween()
+		tween.parallel().tween_property(u, "position", u.position + Vector2(randf_range(-10.0, 10.0), randf_range(-10.0, 10.0)), 0.35)
+		tween.parallel().tween_property(u, "modulate:a", 0.0, 0.35)
+		tween.tween_callback(u.queue_free)
+
 func _on_coin_touched(other: Area2D, coin: Area2D) -> void:
 	if player:
 		player.bonus_rychlost += 120.0
 		player.bonus_rychlost = clamp(player.bonus_rychlost, 0.0, 400.0)
 	if other != player or not is_instance_valid(coin) or not coin.is_in_group("coin"):
 		return
+	_jiskry(coin.position, Color(1.0, 0.85, 0.3))
 	score += 1
 	if score > best:
 		best = score
