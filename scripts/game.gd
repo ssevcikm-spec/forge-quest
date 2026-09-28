@@ -149,7 +149,7 @@ func _ready() -> void:
 
 func _update_hud() -> void:
 	if hud:
-		hud.text = "MINCE: %d / %d (nejlepší: %d)   Životy: %d   ČAS: %d s   NEJ: %d s" % [score, mince_v_levelu, best, lives, int(cas_v_levelu), int(nejlepsi_cas)]
+		hud.text = "MINCE: %d / %d (nejlepší: %d)   ZBÝVÁ: %d   Životy: %d   ČAS: %d s   NEJ: %d s" % [score, mince_v_levelu, best, max(0, coin_total - score), lives, int(cas_v_levelu), int(nejlepsi_cas)]
 	if level_label:
 		level_label.text = "LEVEL: %d / 3" % (aktualni_level_index + 1)
 	var progress_rect := get_node_or_null("ProgressRect")
