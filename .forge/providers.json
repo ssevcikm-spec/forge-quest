@@ -22,9 +22,7 @@
       "baseUrl": "https://api.mistral.ai/v1",
       "keyEnv": "MISTRAL_API_KEY",
       "models": [
-        "codestral-latest",
-        "mistral-large-latest",
-        "open-mistral-nemo"
+        "codestral-latest"
       ]
     },
     {
@@ -32,8 +30,7 @@
       "baseUrl": "https://api.cerebras.ai/v1",
       "keyEnv": "CEREBRAS_API_KEY",
       "models": [
-        "gpt-oss-120b",
-        "qwen-3-32b"
+        "gpt-oss-120b"
       ]
     },
     {
@@ -54,7 +51,6 @@
       "keyEnv": "GROQ_API_KEY",
       "models": [
         "openai/gpt-oss-120b",
-        "llama-3.3-70b-versatile",
         "openai/gpt-oss-20b"
       ]
     },
@@ -65,7 +61,6 @@
       "models": [
         "poolside/laguna-s-2.1:free",
         "cohere/north-mini-code:free",
-        "z-ai/glm-5.2:free",
         "qwen/qwen3.8-27b:free",
         "google/gemma-4-31b-it:free"
       ]
