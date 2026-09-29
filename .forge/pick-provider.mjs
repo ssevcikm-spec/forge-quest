@@ -23,7 +23,24 @@ import { dirname, join } from 'node:path';
 import { orderProviders, startIndex, probeOrder } from './node/provider-choice.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const config = JSON.parse(readFileSync(join(HERE, 'providers.json'), 'utf8'));
+
+// providers.json je jediný zdroj pravdy v repu orchestra. Tady se stáhne čerstvá
+// verze (raw.githubusercontent) a lokální kopie v repu hry je jen ZÁLOHA pro
+// případ, že by raw nebyl dostupný. Díky tomu se mrtvý model opraví jednou
+// (v orchestra) a všechny hry ho uvidí při dalším běhu – žádné kopie v repoch her.
+const ORCHESTRA_RAW = "https://raw.githubusercontent.com/ssevcikm-spec/forge-orchestra/main/repo/.forge/providers.json";
+let config;
+try {
+  const r = await fetch(ORCHESTRA_RAW);
+  if (r.ok) {
+    config = await r.json();
+    console.log("providers.json: čerstvá verze z orchestra");
+  }
+} catch { /* offline – spadni na lokální kopii */ }
+if (!config) {
+  config = JSON.parse(readFileSync(join(HERE, 'providers.json'), 'utf8'));
+  console.log("providers.json: lokální kopie (orchestra nedostupná)");
+}
 
 const arg = (jmeno) => {
   const i = process.argv.indexOf(jmeno);
