@@ -35,6 +35,14 @@ on:
       prompt:
         description: Zadání pro agenta
         required: true
+      max_lines:
+        description: Limit velikosti změny pro auto-merge (z granule roadmapy; default 60)
+        required: false
+        default: '60'
+      model:
+        description: 'Modelová třída granule: any | strong (strong = jen silné modely z providers.json)'
+        required: false
+        default: any
 
 permissions:
   contents: read
@@ -89,6 +97,9 @@ jobs:
           # tak neběží pořád se stejným modelem (naměřeno: tři pokusy o úlohu
           # #40 selhaly stejně, protože všechny tři vybraly codestral-latest).
           FORGE_RUN_KEY: ${{ inputs.run_key }}
+          # Granule s model=strong (size_lines > 60) smí zpracovat jen silný
+          # model – pick-provider se pak zúží na strongModels z providers.json.
+          FORGE_MIN_STRONG: ${{ inputs.model }}
         run: node .forge/pick-provider.mjs
       - name: Spusť agenta
         # Zadání jde do skriptu přes proměnnou, ne přes ${{ }} – jinak by se
@@ -110,6 +121,7 @@ jobs:
           FORGE_PROMPT: ${{ inputs.prompt }}
           FORGE_TITLE: ${{ inputs.title }}
           FORGE_RUN_KEY: ${{ inputs.run_key }}
+          FORGE_MIN_STRONG: ${{ inputs.model }}
           # Klíče musí být i TADY, ne jen ve kroku s výběrem poskytovatele:
           # druhý pokus volá pick-provider.mjs znovu a bez klíčů by hlásil
           # „přeskočeno (chybí …)" u všech poskytovatelů. Naměřeno v běhu #57:
@@ -347,7 +359,7 @@ jobs:
   #   1) změna se smí dotknout JEN scripts/ a assets/,
   #   2) NIKDY tests/, .github/, .forge/ ani project.godot – jinak by si agent
   #      mohl „opravit" vlastní kontrolu, což je přesně to, co nechceme,
-  #   3) změna je malá (do 60 řádků),
+  #   3) změna je malá (do limitu granule `max_lines`, výchozí 60),
   #   4) nezávisle to potvrdí CI na tom PR (ne jen agent sám).
   # Když cokoli neprojde, PR zůstane otevřený a dostane komentář s vysvětlením.
   # ---------------------------------------------------------------------------
@@ -400,8 +412,10 @@ jobs:
             del=$((del + d))
           done < /tmp/files.txt
           echo "změna (jen skutečná práce): +$add -$del"
-          if [ $((add + del)) -gt 60 ]; then
-            echo "!! velká změna ($((add + del)) řádků)"; ok=0
+          # Limit se bere z granule (inputs.max_lines): conductor ho předává
+          # z roadmapy (size_lines); default 60 odpovídá slabému modelu.
+          if [ $((add + del)) -gt ${{ inputs.max_lines }} ]; then
+            echo "!! velká změna ($((add + del)) řádků, limit ${{ inputs.max_lines }})"; ok=0
           fi
           echo "ok=$ok" >> "$GITHUB_OUTPUT"
 
@@ -449,4 +463,4 @@ jobs:
         run: |
           gh pr comment "$PR" --body "🤖 **Automatické sloučení neproběhlo** (pravidla: ${{ steps.gate.outputs.ok }}, CI: ${{ steps.ci.outputs.ci }}).
 
-          Buď je změna větší než 60 řádků, sahá mimo \`scripts/\` a \`assets/\`, nebo se dotýká testů či orchestrace – a to agent sám nesmí. Podívej se na ni prosím ručně."
+          Buď je změna větší než limit granule (${{ inputs.max_lines }} řádků), sahá mimo \`scripts/\` a \`assets/\`, nebo se dotýká testů či orchestrace – a to agent sám nesmí. Podívej se na ni prosím ručně."
