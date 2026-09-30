@@ -51,6 +51,24 @@ export function orderProviders(items, seed) {
 }
 
 /**
+ * Zúží řetězec na poskytovatele se SILNÝMI modely (granule `model: strong`).
+ *
+ * PROČ: velká granule (size_lines > 60) smí podle pravidel zpracovat jen
+ * dostatečně silný model. Slabé modely ji nedostanou, i kdyby fronta stála –
+ * jinak by ji roztrhaly na polovičaté API. Poskytovatelé bez `strongModels`
+ * (gemini flash, openrouter :free) ze seznamu vypadnou a z těh, co zbudou,
+ * se zkoušejí jen strongModels.
+ *
+ * @param providers konfigurace z providers.json
+ * @returns zúžený seznam [{ ...provider, models: strongModels }]
+ */
+export function strongProviders(providers) {
+  return providers
+    .filter((p) => Array.isArray(p.strongModels) && p.strongModels.length > 0)
+    .map((p) => ({ ...p, models: p.strongModels }));
+}
+
+/**
  * Od kterého poskytovatele začít hledat.
  * `next` = „chci jiného než minule" – použije se při druhém pokusu v témže běhu,
  * kdy už první model kód nezměnil.
